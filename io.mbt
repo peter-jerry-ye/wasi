@@ -1,25 +1,25 @@
 /// Output a string
 /// 输出字符串
-pub fn print(self: FileDescriptor, str : String, pos : Pos) {
-  fd_write(str.to_bytes(), self, pos)
+pub fn print(self: FileDescriptor, str : String) {
+  fd_write(str.to_bytes(), self).unwrap()
   ()
 }
 
 /// Output a string with a new line ending
 /// 输出字符串（带换行符）
-pub fn println(self: FileDescriptor, str : String, pos : Pos) {
-  self.print(str + "\n", pos)
+pub fn println(self: FileDescriptor, str : String) {
+  self.print(str + "\n")
 }
 
 /// Return whatever comes next
 /// Not necessarily one line
 /// 返回接下来的无论什么东西，不一定是一行
-pub fn next(in: FileDescriptor, pos : Pos) -> String {
-  var bytes = Bytes::make(0, 0)
+pub fn next(in: FileDescriptor) -> String {
+  let mut bytes = Bytes::make(0, 0)
   let buffer = 4096
-  var result = buffer
+  let mut result = buffer
   while result == buffer {
-    let res = fd_read(in, pos, buffer)
+    let res = fd_read(in, buffer)
     match res {
       Ok(read) => {
         result = read.length()
@@ -49,10 +49,10 @@ pub fn Scanner::make(in: FileDescriptor) -> Scanner {
 /// Read next line
 /// None if there's nothing more to read
 /// 读下一行。如果None说明没东西可读了
-pub fn next_line(self : Scanner, pos : Pos) -> Option[String] {
-  var i = 0
+pub fn next_line(self : Scanner) -> Option[String] {
+  let mut i = 0
   if self.str.length() == 0 {
-    self.str = next(self.in, pos)
+    self.str = next(self.in)
   }
   while i < self.str.length() {
     if self.str[i] == '\n' {
@@ -63,7 +63,7 @@ pub fn next_line(self : Scanner, pos : Pos) -> Option[String] {
     }
     i = i + 1
     if i == self.str.length() {
-      self.str = self.str + next(self.in, pos)
+      self.str = self.str + next(self.in)
     }
   }
   if self.str.length() > 0 {
