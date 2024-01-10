@@ -27,11 +27,11 @@ Assuming the alias of this package is `@lib`
 ```moonbit
 fn init {
   let scanner = @lib.Scanner::make(@lib.stdin)
-  let str = scanner.next_line(Pos(0))
+  let str = scanner.next_line()
   match str {
-    Some(s) => @lib.stdout.println(s, Pos(0))
-    None => @lib.stdout.println("None", Pos(0))
+    Some(s) => @lib.stdout.println(s)
+    None => @lib.stdout.println("None")
   }
-  @lib.stderr.println("Error", Pos(0))
+  @lib.stderr.println("Error")
 }
 ```
