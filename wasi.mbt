@@ -19,6 +19,8 @@ fn path_open_ffi(file : Int, dir_flags : Int, path_pos : Int, path_len : Int,
         oflags : Int, rights_base : Int64, rights_inheriting : Int64,
         fdflags : Int, result : Int) -> Int = "wasi_snapshot_preview1" "path_open"
 
+fn proc_exit_ffi(exitcode: Int) = "wasi_snapshot_preview1" "proc_exit"
+
 /// 时钟种类
 pub enum ClockId {
   /// 实际时间
@@ -258,3 +260,9 @@ pub let stdout : FileDescriptor = FileDescriptor(1)
 
 /// 标准错误输出（2）
 pub let stderr : FileDescriptor = FileDescriptor(2)
+
+
+/// exit process 退出进程
+pub fn process_exit(exitcode: Int) {
+  proc_exit_ffi(exitcode)
+}
