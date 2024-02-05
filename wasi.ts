@@ -1,26 +1,28 @@
-import Context from "https://deno.land/std@0.206.0/wasi/snapshot_preview1.ts";
+import { promises } from "node:fs";
+import { ConsoleStdout, File, OpenFile, WASI } from "@bjorn3/browser_wasi_shim";
+const { readFile } = promises;
 
-const context = new Context({
-  args: Deno.args,
-  env: Deno.env.toObject(),
-  preopens: { ".": "." },
+const wasi = new WASI(
+  Deno.args,
+  [],
+  [
+    new OpenFile(new File([])),
+    ConsoleStdout.lineBuffered(console.log),
+    ConsoleStdout.lineBuffered(console.error),
+  ],
+);
+
+const wasm = await readFile("target/wasm-gc/release/build/wasi.wasm");
+const module = await WebAssembly.compile(wasm);
+const instance = await WebAssembly.instantiate(module, {
+  "wasi_snapshot_preview1": wasi.wasiImport,
 });
 
-await WebAssembly.instantiateStreaming(
-  fetch(
-    new URL("./target/wasm-gc/release/build/wasi.wasm", import.meta.url),
-  ),
-  {
-    "wasi_snapshot_preview1": context.exports,
+wasi.start(
+  instance as {
+    exports: {
+      memory: WebAssembly.Memory;
+      _start: () => unknown;
+    };
   },
-).then((obj) => {
-  try {
-    context.start(obj.instance);
-  } catch (e) {
-    console.error(e);
-  } finally {
-    // const memory = obj.instance.exports["memory"] as WebAssembly.Memory;
-    // console.log(new Uint8Array(memory.buffer, 0, 100));
-    // console.log(new Uint8Array(memory.buffer, 1020, 100));
-  }
-});
+);

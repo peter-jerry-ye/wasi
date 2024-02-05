@@ -1,0 +1,13 @@
+{
+    "dependencies": {
+        "@bjorn3/browser_wasi_shim": "0.2.19"
+    },
+    "devDependencies": {
+        "binaryen": "116.0.0",
+        "esbuild": "0.19.11"
+    },
+    "scripts": {
+        "build": "moon build --target wasm-gc && deno run -A build.ts",
+        "run": "deno run -A wasi.ts"
+    }
+}

@@ -1,40 +1,36 @@
-// build wat
-const build_wat = new Deno.Command("moon", {
-  args: ["build", "--target", "wasm-gc", "--output-wat"],
-  env: Deno.env.toObject(),
-});
-// make wat wasi-preview-1-compatible
-const edit_wat = async () => {
-  console.log("Editing wat");
-  const wat_file = await Deno.readFile(
-    "target/wasm-gc/release/build/wasi.wat",
-  );
-  const wat = new TextDecoder().decode(wat_file);
-  const memory_renamed = wat.replace(
-    /export \"moonbit\.memory\"/,
-    'export "memory"',
-  );
-  const remove_import = memory_renamed.replace(
-    '(func $printc (import "spectest" "print_char") (param $i i32))',
-    "(func $printc (param $i i32) (nop))",
-  );
-  await Deno.writeFile(
-    "target/wasm-gc/release/build/wasi.wat",
-    new TextEncoder().encode(remove_import),
-  );
-  console.log("Modified wat");
-};
-// compile wat to wasm
-const build_wasm = new Deno.Command("wasm-tools", {
-  args: [
-    "parse",
-    "target/wasm-gc/release/build/wasi.wat",
-    "-o",
-    "target/wasm-gc/release/build/wasi.wasm",
-  ],
-  env: Deno.env.toObject(),
+import binaryen from "binaryen";
+import { promises } from "node:fs";
+const { writeFile, readFile } = promises;
+
+const wasm = await readFile("target/wasm-gc/release/build/wasi.wasm").then(
+  (buffer) => new Uint8Array(buffer),
+);
+
+const module = binaryen.readBinary(wasm);
+module.setFeatures(binaryen.Features.All);
+
+const funcs = module.getNumFunctions();
+const printc = Array.from(Array(funcs).keys()).find((i) => {
+  const info = binaryen.getFunctionInfo(module.getFunctionByIndex(i));
+  return info.module === "spectest" && info.base === "print_char";
 });
 
-await build_wat.spawn().status;
-await edit_wat();
-await build_wasm.spawn().status;
+if (printc) {
+  const name = binaryen.getFunctionInfo(module.getFunctionByIndex(printc)).name;
+  module.removeFunction(name);
+  module.addFunction(name, binaryen.i32, binaryen.none, [], module.nop());
+}
+
+module.removeExport("moonbit.memory");
+module.addMemoryExport("0", "memory");
+
+module.optimize();
+
+await writeFile(
+  "target/wasm-gc/release/build/wasi.wasm",
+  module.emitBinary(),
+);
+await writeFile(
+  "target/wasm-gc/release/build/wasi.wat",
+  module.emitText(),
+);
