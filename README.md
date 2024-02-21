@@ -6,9 +6,9 @@ WASI Preview 1 implementation for MoonBit (GC ver)
 
 ## Usage 使用
 
-需要使用`deno`。利用本项目的`build.ts`、`wasi.ts`与`package.json`来构建你的项目。在安装依赖后从`.mooncakes`中取。
+需要使用`deno` `wasm-tools`。利用本项目的`build.ts`、`wasi.ts`与`deno.json`来构建你的项目。在安装依赖后从`.mooncakes`中取。
 
-Requires `deno`. Use the `build.ts`, `wasi.ts` and `package.json` that come with this package to build your project. Find them in `.mooncakes` after installed dependencies.
+Requires `deno` `wasm-tools`. Use the `build.ts`, `wasi.ts` and `deno.json` that come with this package to build your project. Find them in `.mooncakes` after installed dependencies.
 
 ### Build 构建
 

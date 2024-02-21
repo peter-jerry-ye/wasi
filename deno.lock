@@ -1,0 +1,15 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "npm:@bjorn3/browser_wasi_shim@0.2.19": "npm:@bjorn3/browser_wasi_shim@0.2.19"
+    },
+    "npm": {
+      "@bjorn3/browser_wasi_shim@0.2.19": {
+        "integrity": "sha512-Zu5KVxRp7MBwwdOtXSmu14NUwPASNE6zK/BSwWKf0Fsc4g5NOqPYto5C0Nc6EixDb0AEXCoLFDMKP9RN7n2yPQ==",
+        "dependencies": {}
+      }
+    }
+  },
+  "remote": {}
+}
