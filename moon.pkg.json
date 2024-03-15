@@ -1,4 +1,3 @@
 {
-    "is_main": true,
     "import": [ "peter-jerry-ye/memory" ]
 }

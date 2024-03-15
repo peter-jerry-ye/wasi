@@ -1,3 +1,17 @@
+// Copyright 2024 peter-jerry-ye
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /// 文件标识符。stdin stdout stderr分别为0 1 2，preopened dir从3开始编号
 pub type FileDescriptor Int
 
@@ -15,11 +29,19 @@ fn environ_sizes_get_ffi(environ_count : Int, environ_buf_size : Int) -> Int = "
 
 fn clock_time_get(clock_id : Int, precision : Int64, timeOffset : Int) -> Int = "wasi_snapshot_preview1" "clock_time_get"
 
-fn path_open_ffi(file : Int, dir_flags : Int, path_pos : Int, path_len : Int,
-        oflags : Int, rights_base : Int64, rights_inheriting : Int64,
-        fdflags : Int, result : Int) -> Int = "wasi_snapshot_preview1" "path_open"
+fn path_open_ffi(
+  file : Int,
+  dir_flags : Int,
+  path_pos : Int,
+  path_len : Int,
+  oflags : Int,
+  rights_base : Int64,
+  rights_inheriting : Int64,
+  fdflags : Int,
+  result : Int
+) -> Int = "wasi_snapshot_preview1" "path_open"
 
-fn proc_exit_ffi(exitcode: Int) = "wasi_snapshot_preview1" "proc_exit"
+fn proc_exit_ffi(exitcode : Int) = "wasi_snapshot_preview1" "proc_exit"
 
 /// 时钟种类
 pub enum ClockId {
@@ -58,8 +80,8 @@ pub fn fd_write(bytes : Bytes, file : FileDescriptor) -> Result[Int, Int] {
           memory(4).use(
             fn(result) {
               buffer.store_bytes(bytes)
-              ptr.store32(0, buffer.offset)
-              ptr.store32(4, buffer.length)
+              ptr.store32(0, buffer.offset) |> ignore
+              ptr.store32(4, buffer.length) |> ignore
               let errno = fd_write_ffi(file.0, ptr.offset, 1, result.offset)
               if errno == 0 {
                 // TODO : Remove
@@ -85,8 +107,8 @@ pub fn fd_read(file : FileDescriptor, len : Int) -> Result[Bytes, Int] {
         fn(ptr) {
           memory(4).use(
             fn(result) {
-              ptr.store32(0, buffer.offset)
-              ptr.store32(4, buffer.length)
+              ptr.store32(0, buffer.offset) |> ignore
+              ptr.store32(4, buffer.length) |> ignore
               let errno = fd_read_ffi(file.0, ptr.offset, 1, result.offset)
               if errno == 0 {
                 let size = result.load32(0).unwrap()
@@ -131,7 +153,7 @@ pub fn get_args() -> Result[List[Bytes], Int] {
                       while i >= 0 {
                         let start = arg_pos_m.load32(i * 4).unwrap() - arg_m.offset
                         let end = if i != argc - 1 {
-                          arg_pos_m.load32((i + 1) * 4).unwrap()- arg_m.offset
+                          arg_pos_m.load32((i + 1) * 4).unwrap() - arg_m.offset
                         } else {
                           argv_size
                         }
@@ -203,8 +225,10 @@ pub fn get_environs() -> Result[List[Bytes], Int] {
 
 /// Real time -> nano second 纳秒
 /// Monotonic -> pico second 皮秒
-pub fn get_clock_time(clock_id : ClockId, resolution : Int64) ->
-     Result[Int64, Int] {
+pub fn get_clock_time(
+  clock_id : ClockId,
+  resolution : Int64
+) -> Result[Int64, Int] {
   let id = match clock_id {
     Realtime => 0
     Monotonic => 1
@@ -222,9 +246,15 @@ pub fn get_clock_time(clock_id : ClockId, resolution : Int64) ->
 }
 
 /// 打开新的文件
-pub fn path_open(self : FileDescriptor, dirflags : LookupFlag, path : String,
-        oflags : OpenFlag, rights_base : FDRight, rights_inheriting : FDRight,
-        flags : FDFlag) -> Result[FileDescriptor, Int] {
+pub fn path_open(
+  self : FileDescriptor,
+  dirflags : LookupFlag,
+  path : String,
+  oflags : OpenFlag,
+  rights_base : FDRight,
+  rights_inheriting : FDRight,
+  flags : FDFlag
+) -> Result[FileDescriptor, Int] {
   memory(path.length()).use(
     fn(m) {
       m.store_bytes(path.to_bytes())
@@ -261,8 +291,7 @@ pub let stdout : FileDescriptor = FileDescriptor(1)
 /// 标准错误输出（2）
 pub let stderr : FileDescriptor = FileDescriptor(2)
 
-
 /// exit process 退出进程
-pub fn process_exit(exitcode: Int) {
+pub fn process_exit(exitcode : Int) {
   proc_exit_ffi(exitcode)
 }
