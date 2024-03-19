@@ -292,6 +292,6 @@ pub let stdout : FileDescriptor = FileDescriptor(1)
 pub let stderr : FileDescriptor = FileDescriptor(2)
 
 /// exit process 退出进程
-pub fn process_exit(exitcode : Int) {
+pub fn process_exit(exitcode : Int) -> Unit {
   proc_exit_ffi(exitcode)
 }

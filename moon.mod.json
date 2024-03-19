@@ -1,8 +1,9 @@
 {
   "name": "peter-jerry-ye/wasi",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "deps": {
-    "peter-jerry-ye/memory": "0.5.0"
+    "peter-jerry-ye/memory": "0.6.0"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "repository": "https://github.com/peter-jerry-ye/wasi"
 }

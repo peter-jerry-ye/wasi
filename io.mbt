@@ -14,13 +14,13 @@
 
 /// Output a string
 /// 输出字符串
-pub fn print(self : FileDescriptor, str : String) {
+pub fn print(self : FileDescriptor, str : String) -> Unit {
   fd_write(str.to_bytes(), self).unwrap() |> ignore
 }
 
 /// Output a string with a new line ending
 /// 输出字符串（带换行符）
-pub fn println(self : FileDescriptor, str : String) {
+pub fn println(self : FileDescriptor, str : String) -> Unit {
   self.print(str + "\n")
 }
 
