@@ -52,6 +52,8 @@ pub enum FDRights {
   Write
   Allocate
   Read_dir
+  Sock_shutdown
+  Sock_accept
 }
 
 pub(readonly) type FDRight Int64
@@ -62,21 +64,25 @@ pub fn FDRight::make() -> FDRight {
 
 pub fn set(self : FDRight, flag : FDRights) -> FDRight {
   match flag {
-    Datasync => FDRight(self.0.lor((1L).lsl(0L)))
-    Read => FDRight(self.0.lor((1L).lsl(1L)))
-    Write => FDRight(self.0.lor((1L).lsl(6L)))
-    Allocate => FDRight(self.0.lor((1L).lsl(8L)))
-    Read_dir => FDRight(self.0.lor((1L).lsl(14L)))
+    Datasync => FDRight(self.0.lor(1L.lsl(0L)))
+    Read => FDRight(self.0.lor(1L.lsl(1L)))
+    Write => FDRight(self.0.lor(1L.lsl(6L)))
+    Allocate => FDRight(self.0.lor(1L.lsl(8L)))
+    Read_dir => FDRight(self.0.lor(1L.lsl(14L)))
+    Sock_shutdown => FDRight(self.0.lor(1L.lsl(28L)))
+    Sock_accept => FDRight(self.0.lor(1L.lsl(29L)))
   }
 }
 
 pub fn unset(self : FDRight, flag : FDRights) -> FDRight {
   match flag {
-    Datasync => FDRight(self.0.land((1L).lsl(0L).lxor(0L)))
-    Read => FDRight(self.0.land((1L).lsl(1L).lxor(0L)))
-    Write => FDRight(self.0.land((1L).lsl(6L).lxor(0L)))
-    Allocate => FDRight(self.0.land((1L).lsl(8L).lxor(0L)))
-    Read_dir => FDRight(self.0.land((1L).lsl(14L).lxor(0L)))
+    Datasync => FDRight(self.0.land(1L.lsl(0L).lxor(0L)))
+    Read => FDRight(self.0.land(1L.lsl(1L).lxor(0L)))
+    Write => FDRight(self.0.land(1L.lsl(6L).lxor(0L)))
+    Allocate => FDRight(self.0.land(1L.lsl(8L).lxor(0L)))
+    Read_dir => FDRight(self.0.land(1L.lsl(14L).lxor(0L)))
+    Sock_shutdown => FDRight(self.0.land(1L.lsl(28L).lxor(0L)))
+    Sock_accept => FDRight(self.0.land(1L.lsl(29L).lxor(0L)))
   }
 }
 
@@ -130,5 +136,83 @@ pub fn unset(self : OpenFlag, flag : OpenFlags) -> OpenFlag {
     Directory => OpenFlag(self.0.land((1).lsl(1).lxor(0)))
     Excl => OpenFlag(self.0.land((1).lsl(2).lxor(0)))
     Trunc => OpenFlag(self.0.land((1).lsl(3).lxor(0)))
+  }
+}
+
+pub enum RIFlags {
+  Recv_Peek
+  Recv_Wait_all
+}
+
+pub(readonly) type RIFlag Int
+
+pub fn RIFlag::make() -> RIFlag {
+  RIFlag(0)
+}
+
+pub fn set(self : RIFlag, flag : RIFlags) -> RIFlag {
+  match flag {
+    Recv_Peek => RIFlag(self.0.lor((1).lsl(0)))
+    Recv_Wait_all => RIFlag(self.0.lor((1).lsl(1)))
+  }
+}
+
+pub fn unset(self : RIFlag, flag : RIFlags) -> RIFlag {
+  match flag {
+    Recv_Peek => RIFlag(self.0.land((1).lsl(0).lxor(0)))
+    Recv_Wait_all => RIFlag(self.0.land((1).lsl(1).lxor(0)))
+  }
+}
+
+pub enum ROFlags {
+  Recv_data_truncated
+}
+
+pub(readonly) type ROFlag Int
+
+pub fn ROFlag::make() -> ROFlag {
+  ROFlag(0)
+}
+
+pub fn set(self : ROFlag, flag : ROFlags) -> ROFlag {
+  match flag {
+    Recv_data_truncated => ROFlag(self.0.lor((1).lsl(0)))
+  }
+}
+
+pub fn unset(self : ROFlag, flag : ROFlags) -> ROFlag {
+  match flag {
+    Recv_data_truncated => ROFlag(self.0.land((1).lsl(0).lxor(0)))
+  }
+}
+
+pub(readonly) type SIFlag Int
+
+pub fn SIFlag::make() -> SIFlag {
+  SIFlag(0)
+}
+
+pub enum SDFlags {
+  Disable_furthur_receive
+  Disable_furthur_send
+}
+
+pub(readonly) type SDFlag Int
+
+pub fn SDFlag::make() -> SDFlag {
+  SDFlag(0)
+}
+
+pub fn set(self : SDFlag, flag : SDFlags) -> SDFlag {
+  match flag {
+    Disable_furthur_receive => SDFlag(self.0.lor((1).lsl(0)))
+    Disable_furthur_send => SDFlag(self.0.lor((1).lsl(1)))
+  }
+}
+
+pub fn unset(self : SDFlag, flag : SDFlags) -> SDFlag {
+  match flag {
+    Disable_furthur_receive => SDFlag(self.0.land((1).lsl(0).lxor(0)))
+    Disable_furthur_send => SDFlag(self.0.land((1).lsl(1).lxor(0)))
   }
 }

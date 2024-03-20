@@ -27,7 +27,11 @@ fn environ_get_ffi(environ_pointers : Int, environ : Int) -> Int = "wasi_snapsho
 
 fn environ_sizes_get_ffi(environ_count : Int, environ_buf_size : Int) -> Int = "wasi_snapshot_preview1" "environ_sizes_get"
 
-fn clock_time_get(clock_id : Int, precision : Int64, timeOffset : Int) -> Int = "wasi_snapshot_preview1" "clock_time_get"
+fn clock_time_get_ffi(
+  clock_id : Int,
+  precision : Int64,
+  time_offset : Int
+) -> Int = "wasi_snapshot_preview1" "clock_time_get"
 
 fn path_open_ffi(
   file : Int,
@@ -40,6 +44,8 @@ fn path_open_ffi(
   fdflags : Int,
   result : Int
 ) -> Int = "wasi_snapshot_preview1" "path_open"
+
+fn sock_accept_ffi(fd : Int, fdflags : Int, result : Int) -> Int = "wasi_snapshot_preview1" "sock_accept"
 
 fn proc_exit_ffi(exitcode : Int) = "wasi_snapshot_preview1" "proc_exit"
 
@@ -235,7 +241,7 @@ pub fn get_clock_time(
   }
   memory(8).use(
     fn(m) {
-      let errno = clock_time_get(id, resolution, m.offset)
+      let errno = clock_time_get_ffi(id, resolution, m.offset)
       if errno != 0 {
         Err(errno)
       } else {
@@ -294,4 +300,21 @@ pub let stderr : FileDescriptor = FileDescriptor(2)
 /// exit process 退出进程
 pub fn process_exit(exitcode : Int) -> Unit {
   proc_exit_ffi(exitcode)
+}
+
+/// accept socket 接受socket
+pub fn accept_socket(
+  self : FileDescriptor,
+  flags : FDFlag
+) -> Result[FileDescriptor, Int] {
+  memory(4).use(
+    fn(result) {
+      let errno = sock_accept_ffi(self.0, flags.0, result.offset)
+      if errno != 0 {
+        Err(errno)
+      } else {
+        Ok(FileDescriptor(result.load32(0).unwrap()))
+      }
+    },
+  )
 }
