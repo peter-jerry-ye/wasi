@@ -64,25 +64,25 @@ pub fn FDRight::make() -> FDRight {
 
 pub fn set(self : FDRight, flag : FDRights) -> FDRight {
   match flag {
-    Datasync => FDRight(self.0.lor(1L.lsl(0L)))
-    Read => FDRight(self.0.lor(1L.lsl(1L)))
-    Write => FDRight(self.0.lor(1L.lsl(6L)))
-    Allocate => FDRight(self.0.lor(1L.lsl(8L)))
-    Read_dir => FDRight(self.0.lor(1L.lsl(14L)))
-    Sock_shutdown => FDRight(self.0.lor(1L.lsl(28L)))
-    Sock_accept => FDRight(self.0.lor(1L.lsl(29L)))
+    Datasync => FDRight(self.0.lor(1L.lsl(0)))
+    Read => FDRight(self.0.lor(1L.lsl(1)))
+    Write => FDRight(self.0.lor(1L.lsl(6)))
+    Allocate => FDRight(self.0.lor(1L.lsl(8)))
+    Read_dir => FDRight(self.0.lor(1L.lsl(14)))
+    Sock_shutdown => FDRight(self.0.lor(1L.lsl(28)))
+    Sock_accept => FDRight(self.0.lor(1L.lsl(29)))
   }
 }
 
 pub fn unset(self : FDRight, flag : FDRights) -> FDRight {
   match flag {
-    Datasync => FDRight(self.0.land(1L.lsl(0L).lxor(0L)))
-    Read => FDRight(self.0.land(1L.lsl(1L).lxor(0L)))
-    Write => FDRight(self.0.land(1L.lsl(6L).lxor(0L)))
-    Allocate => FDRight(self.0.land(1L.lsl(8L).lxor(0L)))
-    Read_dir => FDRight(self.0.land(1L.lsl(14L).lxor(0L)))
-    Sock_shutdown => FDRight(self.0.land(1L.lsl(28L).lxor(0L)))
-    Sock_accept => FDRight(self.0.land(1L.lsl(29L).lxor(0L)))
+    Datasync => FDRight(self.0.land(1L.lsl(0).lxor(0L)))
+    Read => FDRight(self.0.land(1L.lsl(1).lxor(0L)))
+    Write => FDRight(self.0.land(1L.lsl(6).lxor(0L)))
+    Allocate => FDRight(self.0.land(1L.lsl(8).lxor(0L)))
+    Read_dir => FDRight(self.0.land(1L.lsl(14).lxor(0L)))
+    Sock_shutdown => FDRight(self.0.land(1L.lsl(28).lxor(0L)))
+    Sock_accept => FDRight(self.0.land(1L.lsl(29).lxor(0L)))
   }
 }
 
