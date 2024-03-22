@@ -1,6 +1,6 @@
 {
   "name": "peter-jerry-ye/wasi",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "deps": {
     "peter-jerry-ye/memory": "0.6.0"
   },

@@ -145,6 +145,7 @@ pub fn get_args() -> Result[List[Bytes], Int] {
           } else {
             let argc = argc_m.load32(0).unwrap()
             let argv_size = argv_size_m.load32(0).unwrap()
+            if (argc == 0) { return Ok(Nil) }
             memory(argc * 4).use(
               fn(arg_pos_m) {
                 memory(argv_size).use(
@@ -193,6 +194,7 @@ pub fn get_environs() -> Result[List[Bytes], Int] {
           } else {
             let argc = argc_m.load32(0).unwrap()
             let argv_size = argv_size_m.load32(0).unwrap()
+            if (argc == 0) { return Ok(Nil) }
             memory(argc * 4).use(
               fn(arg_pos_m) {
                 memory(argv_size).use(
