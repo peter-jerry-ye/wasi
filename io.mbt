@@ -12,16 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub enum CharSet {
+  UTF8
+  UTF16
+}
+
 /// Output a string
 /// 输出字符串
-pub fn print(self : FileDescriptor, str : String) -> Unit {
-  fd_write(str.to_bytes(), self).unwrap() |> ignore
+pub fn print(
+  self : FileDescriptor,
+  str : String,
+  ~charset : CharSet = UTF8
+) -> Unit {
+  match charset {
+    UTF16 => fd_write(str.to_bytes(), self).unwrap() |> ignore
+    UTF8 => fd_write(encode_utf8(str), self).unwrap() |> ignore
+  }
 }
 
 /// Output a string with a new line ending
 /// 输出字符串（带换行符）
-pub fn println(self : FileDescriptor, str : String) -> Unit {
-  self.print(str + "\n")
+pub fn println(
+  self : FileDescriptor,
+  str : String,
+  ~charset : CharSet = UTF8
+) -> Unit {
+  self.print(str + "\n", ~charset)
 }
 
 pub fn write(self : FileDescriptor, content : Bytes) -> Result[Int, Int] {
@@ -53,8 +69,7 @@ pub fn read_all_bytes(self : FileDescriptor, len : Int) -> Result[Bytes, Int] {
       let res = self.read_n_bytes(len)?
       let res_len = res.length()
       if res_len == len {
-        continue Cons(res, bytes),
-          count + res_len
+        continue Cons(res, bytes), count + res_len
       } else {
         break (Cons(res, bytes), count + res_len)
       }
@@ -65,8 +80,7 @@ pub fn read_all_bytes(self : FileDescriptor, len : Int) -> Result[Bytes, Int] {
     Cons(hd, tl), count => {
       let res_len = hd.length()
       result.blit(count - res_len, hd, 0, res_len)
-      continue tl,
-        count - res_len
+      continue tl, count - res_len
     }
     Nil, _ => ()
   }
@@ -131,4 +145,59 @@ pub fn next_line(self : Scanner) -> Option[String] {
   } else {
     None
   }
+}
+
+/// Decode a UTF-8 byte array into a string
+pub fn decode_utf8(bytes : Bytes) -> String {
+  let buffer = Buffer::make(bytes.length() * 4)
+  for i = 0; i < bytes.length(); {
+    if bytes[i] < 0b10000000 {
+      buffer.write_char(Char::from_int(bytes[i]))
+      continue i + 1
+    } else if bytes[i] < 0b11100000 && i + 1 < bytes.length() {
+      buffer.write_char(
+        Char::from_int(
+          bytes[i].land(0b11111).lsl(6).lor(bytes[i + 1].land(0b111111)),
+        ),
+      )
+      continue i + 2
+    } else if bytes[i] < 0b11110000 && i + 2 < bytes.length() {
+      buffer.write_char(
+        Char::from_int(
+          bytes[i].land(0b1111).lsl(12).lor(bytes[i + 1].land(0b111111).lsl(6)).lor(
+            bytes[i + 2].land(0b111111),
+          ),
+        ),
+      )
+      continue i + 3
+    } else if bytes[i] < 0b11111000 && i + 3 < bytes.length() {
+      buffer.write_char(
+        Char::from_int(
+          bytes[i].land(0b111).lsl(18).lor(bytes[i + 1].land(0b111111).lsl(12)).lor(
+            bytes[i + 2].land(0b111111).lsl(6),
+          ).lor(bytes[i + 3].land(0b111111)),
+        ),
+      )
+      continue i + 4
+    } else {
+      break // let it go ~
+    }
+  }
+  buffer.to_string()
+}
+
+/// Encode a string into a UTF-8 byte array
+pub fn encode_utf8(string : String) -> Bytes {
+  let bytes = Bytes::make(string.length() * 4, 0)
+  let length = loop 0, 0 {
+    offset, chari =>
+      if chari < string.length() {
+        continue offset + bytes.set_utf8_char(offset, string[chari]), chari + 1
+      } else {
+        offset
+      }
+  }
+  let result = Bytes::make(length, 0)
+  result.blit(0, bytes, 0, length)
+  result
 }
