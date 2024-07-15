@@ -15,7 +15,7 @@ const wasi = new WASI(
   ],
 );
 
-const wasm = await Deno.readFile("target/wasm-gc/release/build/wasi.wasm");
+const wasm = await Deno.readFile("./example/test/target/wasm-gc/release/build/wasi-test.wasm");
 const module = await WebAssembly.compile(wasm);
 const instance = await WebAssembly.instantiate(module, {
   "wasi_snapshot_preview1": wasi.wasiImport,

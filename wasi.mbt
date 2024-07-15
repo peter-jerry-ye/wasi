@@ -91,7 +91,7 @@ pub fn fd_write(bytes : Bytes, file : FileDescriptor) -> Result[Int, Int] {
               let errno = fd_write_ffi(file.0, ptr.offset, 1, result.offset)
               if errno == 0 {
                 // TODO : Remove
-                buffer.store_bytes(Bytes::make(bytes.length(), 0))
+                buffer.store_bytes(Bytes::make(bytes.length()))
                 Ok(result.load32(0).unwrap())
               } else {
                 Err(errno)
@@ -119,7 +119,7 @@ pub fn fd_read(file : FileDescriptor, len : Int) -> Result[Bytes, Int] {
               if errno == 0 {
                 let size = result.load32(0).unwrap()
                 let bytes = buffer.load_bytes()
-                let b = Bytes::make(size, 0)
+                let b = Bytes::make(size)
                 b.blit(0, bytes, 0, size)
                 Ok(b)
               } else {
@@ -134,7 +134,7 @@ pub fn fd_read(file : FileDescriptor, len : Int) -> Result[Bytes, Int] {
 }
 
 /// get_args get command line arguments 获取命令行参数
-pub fn get_args() -> Result[List[Bytes], Int] {
+pub fn get_args() -> Result[@immut/list.List[Bytes], Int] {
   memory(4).use(
     fn(argc_m) {
       memory(4).use(
@@ -145,7 +145,9 @@ pub fn get_args() -> Result[List[Bytes], Int] {
           } else {
             let argc = argc_m.load32(0).unwrap()
             let argv_size = argv_size_m.load32(0).unwrap()
-            if (argc == 0) { return Ok(Nil) }
+            if argc == 0 {
+              return Ok(Nil)
+            }
             memory(argc * 4).use(
               fn(arg_pos_m) {
                 memory(argv_size).use(
@@ -154,22 +156,20 @@ pub fn get_args() -> Result[List[Bytes], Int] {
                     if errno != 0 {
                       Err(errno)
                     } else {
-                      let mut i : Int = argc - 1
-                      let mut list : List[Bytes] = Nil
                       let bytes = arg_m.load_bytes()
-                      while i >= 0 {
+                      for i = argc - 1, list = @immut/list.Nil; i >= 0; {
                         let start = arg_pos_m.load32(i * 4).unwrap() - arg_m.offset
                         let end = if i != argc - 1 {
                           arg_pos_m.load32((i + 1) * 4).unwrap() - arg_m.offset
                         } else {
                           argv_size
                         }
-                        let b = Bytes::make(end - start, 0)
+                        let b = Bytes::make(end - start)
                         b.blit(0, bytes, start, end - start)
-                        list = Cons(b, list)
-                        i = i - 1
+                        continue i - 1, Cons(b, list)
+                      } else {
+                        Ok(list)
                       }
-                      Ok(list)
                     }
                   },
                 )
@@ -183,7 +183,7 @@ pub fn get_args() -> Result[List[Bytes], Int] {
 }
 
 /// get_environs get environment arguments 获取环境参数
-pub fn get_environs() -> Result[List[Bytes], Int] {
+pub fn get_environs() -> Result[@immut/list.List[Bytes], Int] {
   memory(4).use(
     fn(argc_m) {
       memory(4).use(
@@ -194,7 +194,9 @@ pub fn get_environs() -> Result[List[Bytes], Int] {
           } else {
             let argc = argc_m.load32(0).unwrap()
             let argv_size = argv_size_m.load32(0).unwrap()
-            if (argc == 0) { return Ok(Nil) }
+            if argc == 0 {
+              return Ok(Nil)
+            }
             memory(argc * 4).use(
               fn(arg_pos_m) {
                 memory(argv_size).use(
@@ -203,22 +205,20 @@ pub fn get_environs() -> Result[List[Bytes], Int] {
                     if errno != 0 {
                       Err(errno)
                     } else {
-                      let mut i : Int = argc - 1
-                      let mut list : List[Bytes] = Nil
                       let bytes = arg_m.load_bytes()
-                      while i >= 0 {
+                      for i = argc - 1, list = @immut/list.Nil; i >= 0; {
                         let start = arg_pos_m.load32(i * 4).unwrap() - arg_m.offset
                         let end = if i != argc - 1 {
                           arg_pos_m.load32((i + 1) * 4).unwrap() - arg_m.offset
                         } else {
                           argv_size
                         }
-                        let b = Bytes::make(end - start, 0)
+                        let b = Bytes::make(end - start)
                         b.blit(0, bytes, start, end - start)
-                        list = Cons(b, list)
-                        i = i - 1
+                        continue i - 1, Cons(b, list)
+                      } else {
+                        Ok(list)
                       }
-                      Ok(list)
                     }
                   },
                 )

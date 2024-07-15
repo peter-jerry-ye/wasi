@@ -51,7 +51,7 @@ pub fn read(self : FileDescriptor) -> Result[Int, Int] {
   if bytes.length() < 1 {
     Ok(-1)
   } else {
-    Ok(bytes[0])
+    Ok(bytes[0].to_int())
   }
 }
 
@@ -64,7 +64,9 @@ pub fn read_n_bytes(self : FileDescriptor, len : Int) -> Result[Bytes, Int] {
 /// Read all bytes with a buffer
 /// 读取所有字节，依照给定的缓冲区大小
 pub fn read_all_bytes(self : FileDescriptor, len : Int) -> Result[Bytes, Int] {
-  let (bytes, count) : (List[Bytes], Int) = loop List::Nil, 0 {
+  let (bytes, count) : (@immut/list.List[Bytes], Int) = loop
+    @immut/list.List::Nil,
+    0 {
     bytes, count => {
       let res = self.read_n_bytes(len)?
       let res_len = res.length()
@@ -75,7 +77,7 @@ pub fn read_all_bytes(self : FileDescriptor, len : Int) -> Result[Bytes, Int] {
       }
     }
   }
-  let result = Bytes::make(count, 0)
+  let result = Bytes::make(count)
   loop bytes, count {
     Cons(hd, tl), count => {
       let res_len = hd.length()
@@ -91,13 +93,13 @@ pub fn read_all_bytes(self : FileDescriptor, len : Int) -> Result[Bytes, Int] {
 /// Not necessarily one line
 /// 返回接下来的无论什么东西，不一定是一行
 pub fn next(in : FileDescriptor) -> String {
-  let mut bytes = Bytes::make(0, 0)
+  let mut bytes = Bytes::make(0)
   let buffer = 4096
   let mut result = buffer
   while result == buffer {
     let read = fd_read(in, buffer).unwrap()
     result = read.length()
-    let b = Bytes::make(bytes.length() + result, 0)
+    let b = Bytes::make(bytes.length() + result)
     b.blit(0, bytes, 0, bytes.length())
     b.blit(bytes.length(), read, 0, result)
     bytes = b
@@ -121,7 +123,7 @@ pub fn Scanner::make(in : FileDescriptor) -> Scanner {
 /// Read next line
 /// None if there's nothing more to read
 /// 读下一行。如果None说明没东西可读了
-pub fn next_line(self : Scanner) -> Option[String] {
+pub fn next_line(self : Scanner) -> String? {
   let mut i = 0
   if self.str.length() == 0 {
     self.str = next(self.in)
@@ -149,33 +151,32 @@ pub fn next_line(self : Scanner) -> Option[String] {
 
 /// Decode a UTF-8 byte array into a string
 pub fn decode_utf8(bytes : Bytes) -> String {
-  let buffer = Buffer::make(bytes.length() * 4)
+  let buffer = Buffer::new(size_hint=bytes.length() * 4)
   for i = 0; i < bytes.length(); {
-    if bytes[i] < 0b10000000 {
-      buffer.write_char(Char::from_int(bytes[i]))
+    let byte = bytes[i].to_int()
+    if byte < 0b10000000 {
+      buffer.write_char(Char::from_int(byte))
       continue i + 1
-    } else if bytes[i] < 0b11100000 && i + 1 < bytes.length() {
+    } else if byte < 0b11100000 && i + 1 < bytes.length() {
       buffer.write_char(
         Char::from_int(
-          bytes[i].land(0b11111).lsl(6).lor(bytes[i + 1].land(0b111111)),
+          ((byte & 0b11111) >> 6) | (bytes[i + 1].to_int() & 0b111111),
         ),
       )
       continue i + 2
-    } else if bytes[i] < 0b11110000 && i + 2 < bytes.length() {
+    } else if byte < 0b11110000 && i + 2 < bytes.length() {
       buffer.write_char(
         Char::from_int(
-          bytes[i].land(0b1111).lsl(12).lor(bytes[i + 1].land(0b111111).lsl(6)).lor(
-            bytes[i + 2].land(0b111111),
-          ),
+          ((byte & 0b1111) << 12) | ((bytes[i + 1].to_int() & 0b111111) << 6) | (bytes[i +
+          2].to_int() & 0b111111),
         ),
       )
       continue i + 3
-    } else if bytes[i] < 0b11111000 && i + 3 < bytes.length() {
+    } else if byte < 0b11111000 && i + 3 < bytes.length() {
       buffer.write_char(
         Char::from_int(
-          bytes[i].land(0b111).lsl(18).lor(bytes[i + 1].land(0b111111).lsl(12)).lor(
-            bytes[i + 2].land(0b111111).lsl(6),
-          ).lor(bytes[i + 3].land(0b111111)),
+          ((byte & 0b111) << 18) | ((bytes[i + 1].to_int() & 0b111111) << 12) | ((bytes[i +
+          2].to_int() & 0b111111) << 6) | (bytes[i + 3].to_int() & 0b111111),
         ),
       )
       continue i + 4
@@ -188,7 +189,7 @@ pub fn decode_utf8(bytes : Bytes) -> String {
 
 /// Encode a string into a UTF-8 byte array
 pub fn encode_utf8(string : String) -> Bytes {
-  let bytes = Bytes::make(string.length() * 4, 0)
+  let bytes = Bytes::make(string.length() * 4)
   let length = loop 0, 0 {
     offset, chari =>
       if chari < string.length() {
@@ -197,7 +198,7 @@ pub fn encode_utf8(string : String) -> Bytes {
         offset
       }
   }
-  let result = Bytes::make(length, 0)
+  let result = Bytes::make(length)
   result.blit(0, bytes, 0, length)
   result
 }
