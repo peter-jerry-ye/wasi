@@ -1,8 +1,10 @@
 pub fn start() -> Unit {
-  let scanner = @wasi.Scanner::make(@wasi.stdin)
-  let str = scanner.next_line()
+  let str = @wasi.stdin.read_all_bytes(1)
   match str {
-    Some(s) => @wasi.stdout.println(s)
-    None => @wasi.stderr.println("None")
+    Ok(bytes) => {
+      @wasi.stdout.println("Hello World") |> ignore
+      // @wasi.stdout.write(bytes) |> ignore
+    }
+    _ => @wasi.stderr.println("Error reading from stdin") |> ignore
   }
 }

@@ -1,3 +1,5 @@
 {
-    "import": [ "peter-jerry-ye/memory" ]
+    "import": [
+        "peter-jerry-ye/wasi/ffi"
+    ]
 }

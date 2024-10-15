@@ -57,182 +57,147 @@ pub enum ClockId {
   Monotonic
 }
 
-priv struct Resource[R] {
-  acquire : () -> R
-  free : (R) -> Unit
-}
-
-fn use[R, T](self : Resource[R], f : (R) -> T) -> T {
-  let resource = (self.acquire)()
-  let result = f(resource)
-  (self.free)(resource)
-  result
-}
-
-fn memory(len : Int) -> Resource[@memory.Memory] {
-  {
-    acquire: fn() { @memory.allocate(len).unwrap() },
-    free: fn(memory) { memory.free().unwrap() },
+/// Write to a file descriptor.
+/// Note: This is similar to `writev` in POSIX.
+///
+/// Like POSIX, any calls of `write` (and other functions to read or write)
+/// for a regular file by other threads in the WASI process should not be
+/// interleaved while `write` is executed.
+pub fn fd_write(
+  file : FileDescriptor,
+  contents : Array[Bytes]
+) -> Result[Int, Int] {
+  let ptr = @ffi.malloc(contents.length() * (4 + 4))
+  let result = @ffi.malloc(4)
+  for i, bytes in contents {
+    let ptr_bytes = @ffi.bytes2ptr(bytes)
+    @ffi.store32(ptr + i * 8, ptr_bytes)
+    @ffi.free(ptr_bytes)
+    @ffi.store32(ptr + i * 8 + 4, bytes.length())
   }
+  let errno = fd_write_ffi(file._, ptr, 1, result)
+  let res = if errno == 0 { Ok(@ffi.load32(result)) } else { Err(errno) }
+  @ffi.free(result)
+  @ffi.free(ptr)
+  res
 }
 
-/// fd_write write to file
-/// 写文件
-pub fn fd_write(bytes : Bytes, file : FileDescriptor) -> Result[Int, Int] {
-  memory(bytes.length()).use(
-    fn(buffer) {
-      memory(8).use(
-        fn(ptr) {
-          memory(4).use(
-            fn(result) {
-              buffer.store_bytes(bytes)
-              ptr.store32(0, buffer.offset) |> ignore
-              ptr.store32(4, buffer.length) |> ignore
-              let errno = fd_write_ffi(file.0, ptr.offset, 1, result.offset)
-              if errno == 0 {
-                // TODO : Remove
-                buffer.store_bytes(Bytes::make(bytes.length()))
-                Ok(result.load32(0).unwrap())
-              } else {
-                Err(errno)
-              }
-            },
-          )
-        },
-      )
-    },
-  )
+/// Read from a file descriptor.
+/// Note: This is similar to `readv` in POSIX.
+pub fn fd_read(
+  file : FileDescriptor,
+  contents : Array[Bytes]
+) -> Result[Int, Int] {
+  let iovs = @ffi.malloc(contents.length() * 4)
+  let result = @ffi.malloc(4)
+  for i, bytes in contents {
+    @ffi.store32(iovs + i * 4, bytes.length())
+  }
+  let errno = fd_read_ffi(file._, iovs, 1, result)
+  let res = if errno == 0 { Ok(@ffi.load32(result)) } else { Err(errno) }
+  @ffi.free(result)
+  @ffi.free(iovs)
+  res
 }
 
-/// fd_read read from a file with given buffer length
-/// 读取文件，限定缓冲区大小
-pub fn fd_read(file : FileDescriptor, len : Int) -> Result[Bytes, Int] {
-  memory(len).use(
-    fn(buffer) {
-      memory(8).use(
-        fn(ptr) {
-          memory(4).use(
-            fn(result) {
-              ptr.store32(0, buffer.offset) |> ignore
-              ptr.store32(4, buffer.length) |> ignore
-              let errno = fd_read_ffi(file.0, ptr.offset, 1, result.offset)
-              if errno == 0 {
-                let size = result.load32(0).unwrap()
-                let bytes = buffer.load_bytes()
-                let b = Bytes::make(size)
-                b.blit(0, bytes, 0, size)
-                Ok(b)
-              } else {
-                Err(errno)
-              }
-            },
-          )
-        },
-      )
-    },
-  )
+/// Read command-line argument data.
+/// 
+/// The size of the array should match that returned by `args_sizes_get`.
+/// 
+/// Each argument is expected to be `\0` terminated.
+/// The first argument should be a string containing the "name" of the
+/// program. This need not be a usable filesystem path or even file name,
+/// and may even be a fixed string. Subsequent arguments are the arguments
+/// passed to the program by the user.
+pub fn get_args() -> Result[Array[Bytes], Int] {
+  let argc_m = @ffi.malloc(4)
+  let argv_size_m = @ffi.malloc(4)
+  let errno = args_sizes_get_ffi(argc_m, argv_size_m)
+  if errno != 0 {
+    @ffi.free(argv_size_m)
+    @ffi.free(argc_m)
+    return Err(errno)
+  }
+  let argc = @ffi.load32(argc_m)
+  @ffi.free(argc_m)
+  let argv_size = @ffi.load32(argv_size_m)
+  @ffi.free(argv_size_m)
+  if argc == 0 {
+    return Ok([])
+  }
+  let arg_pos_m = @ffi.malloc(argc * 4)
+  let bytes = Bytes::new(argv_size)
+  let arg_m = @ffi.bytes2ptr(bytes)
+  let errno = args_get_ffi(arg_pos_m, arg_m)
+  if errno != 0 {
+    @ffi.free(arg_m)
+    @ffi.free(arg_pos_m)
+    return Err(errno)
+  }
+  let args = []
+  for i = argc - 1; i >= 0; i = i - 1 {
+    let start = @ffi.load32(arg_pos_m + i * 4) - arg_m
+    let end = if i != argc - 1 {
+      @ffi.load32(arg_pos_m + (i + 1) * 4) - arg_m
+    } else {
+      argv_size
+    }
+    let b = Bytes::new(end - start)
+    b.blit(0, bytes, start, end - start)
+    args.push(b)
+  }
+  @ffi.free(arg_m)
+  @ffi.free(arg_pos_m)
+  Ok(args.rev())
 }
 
-/// get_args get command line arguments 获取命令行参数
-pub fn get_args() -> Result[@immut/list.List[Bytes], Int] {
-  memory(4).use(
-    fn(argc_m) {
-      memory(4).use(
-        fn(argv_size_m) {
-          let errno = args_sizes_get_ffi(argc_m.offset, argv_size_m.offset)
-          if errno != 0 {
-            Err(errno)
-          } else {
-            let argc = argc_m.load32(0).unwrap()
-            let argv_size = argv_size_m.load32(0).unwrap()
-            if argc == 0 {
-              return Ok(Nil)
-            }
-            memory(argc * 4).use(
-              fn(arg_pos_m) {
-                memory(argv_size).use(
-                  fn(arg_m) {
-                    let errno = args_get_ffi(arg_pos_m.offset, arg_m.offset)
-                    if errno != 0 {
-                      Err(errno)
-                    } else {
-                      let bytes = arg_m.load_bytes()
-                      for i = argc - 1, list = @immut/list.Nil; i >= 0; {
-                        let start = arg_pos_m.load32(i * 4).unwrap() - arg_m.offset
-                        let end = if i != argc - 1 {
-                          arg_pos_m.load32((i + 1) * 4).unwrap() - arg_m.offset
-                        } else {
-                          argv_size
-                        }
-                        let b = Bytes::make(end - start)
-                        b.blit(0, bytes, start, end - start)
-                        continue i - 1, Cons(b, list)
-                      } else {
-                        Ok(list)
-                      }
-                    }
-                  },
-                )
-              },
-            )
-          }
-        },
-      )
-    },
-  )
+/// Read environment variable data.
+/// The sizes of the buffers should match that returned by `environ_sizes_get`.
+/// Key/value pairs are expected to be joined with `=`s, and terminated with `\0`s.
+pub fn get_environs() -> Result[Array[Bytes], Int] {
+  let argc_m = @ffi.malloc(4)
+  let argv_size_m = @ffi.malloc(4)
+  let errno = environ_sizes_get_ffi(argc_m, argv_size_m)
+  if errno != 0 {
+    @ffi.free(argv_size_m)
+    @ffi.free(argc_m)
+    return Err(errno)
+  }
+  let argc = @ffi.load32(argc_m)
+  @ffi.free(argc_m)
+  let argv_size = @ffi.load32(argv_size_m)
+  @ffi.free(argv_size_m)
+  if argc == 0 {
+    return Ok([])
+  }
+  let arg_pos_m = @ffi.malloc(argc * 4)
+  let bytes = Bytes::new(argv_size)
+  let arg_m = @ffi.bytes2ptr(bytes)
+  let errno = environ_get_ffi(arg_pos_m, arg_m)
+  if errno != 0 {
+    @ffi.free(arg_m)
+    @ffi.free(arg_pos_m)
+    return Err(errno)
+  }
+  let args = []
+  for i = argc - 1; i >= 0; i = i - 1 {
+    let start = @ffi.load32(arg_pos_m + i * 4) - arg_m
+    let end = if i != argc - 1 {
+      @ffi.load32(arg_pos_m + (i + 1) * 4) - arg_m
+    } else {
+      argv_size
+    }
+    let b = Bytes::new(end - start)
+    b.blit(0, bytes, start, end - start)
+    args.push(b)
+  }
+  @ffi.free(arg_m)
+  @ffi.free(arg_pos_m)
+  Ok(args.rev())
 }
 
-/// get_environs get environment arguments 获取环境参数
-pub fn get_environs() -> Result[@immut/list.List[Bytes], Int] {
-  memory(4).use(
-    fn(argc_m) {
-      memory(4).use(
-        fn(argv_size_m) {
-          let errno = environ_sizes_get_ffi(argc_m.offset, argv_size_m.offset)
-          if errno != 0 {
-            Err(errno)
-          } else {
-            let argc = argc_m.load32(0).unwrap()
-            let argv_size = argv_size_m.load32(0).unwrap()
-            if argc == 0 {
-              return Ok(Nil)
-            }
-            memory(argc * 4).use(
-              fn(arg_pos_m) {
-                memory(argv_size).use(
-                  fn(arg_m) {
-                    let errno = environ_get_ffi(arg_pos_m.offset, arg_m.offset)
-                    if errno != 0 {
-                      Err(errno)
-                    } else {
-                      let bytes = arg_m.load_bytes()
-                      for i = argc - 1, list = @immut/list.Nil; i >= 0; {
-                        let start = arg_pos_m.load32(i * 4).unwrap() - arg_m.offset
-                        let end = if i != argc - 1 {
-                          arg_pos_m.load32((i + 1) * 4).unwrap() - arg_m.offset
-                        } else {
-                          argv_size
-                        }
-                        let b = Bytes::make(end - start)
-                        b.blit(0, bytes, start, end - start)
-                        continue i - 1, Cons(b, list)
-                      } else {
-                        Ok(list)
-                      }
-                    }
-                  },
-                )
-              },
-            )
-          }
-        },
-      )
-    },
-  )
-}
-
-/// Real time -> nano second 纳秒
-/// Monotonic -> pico second 皮秒
+/// Return the time value of a clock.
+/// Note: This is similar to `clock_gettime` in POSIX.
 pub fn get_clock_time(
   clock_id : ClockId,
   resolution : Int64
@@ -241,16 +206,11 @@ pub fn get_clock_time(
     Realtime => 0
     Monotonic => 1
   }
-  memory(8).use(
-    fn(m) {
-      let errno = clock_time_get_ffi(id, resolution, m.offset)
-      if errno != 0 {
-        Err(errno)
-      } else {
-        Ok(m.load64(0).unwrap())
-      }
-    },
-  )
+  let m = @ffi.malloc(8)
+  let errno = clock_time_get_ffi(id, resolution, m)
+  let res = if errno != 0 { Err(errno) } else { Ok(@ffi.load64(m)) }
+  @ffi.free(m)
+  res
 }
 
 /// 打开新的文件
@@ -263,60 +223,56 @@ pub fn path_open(
   rights_inheriting : FDRight,
   flags : FDFlag
 ) -> Result[FileDescriptor, Int] {
-  memory(path.length()).use(
-    fn(m) {
-      m.store_bytes(path.to_bytes())
-      memory(4).use(
-        fn(result) {
-          let errno = path_open_ffi(
-            self.0,
-            dirflags.0,
-            m.offset,
-            path.length(),
-            oflags.0,
-            rights_base.0,
-            rights_inheriting.0,
-            flags.0,
-            result.offset,
-          )
-          if errno != 0 {
-            Err(errno)
-          } else {
-            Ok(FileDescriptor(result.load32(0).unwrap()))
-          }
-        },
-      )
-    },
+  let path = encode_utf8(path)
+  let path_ptr = @ffi.bytes2ptr(path)
+  let result = @ffi.malloc(4)
+  let errno = path_open_ffi(
+    self._,
+    dirflags._,
+    path_ptr,
+    path.length(),
+    oflags._,
+    rights_base._,
+    rights_inheriting._,
+    flags._,
+    result,
   )
+  let res = if errno != 0 {
+    Err(errno)
+  } else {
+    Ok(FileDescriptor(@ffi.load32(result)))
+  }
+  @ffi.free(result)
+  @ffi.free(path_ptr)
+  res
 }
 
-/// 标准输入（0）
 pub let stdin : FileDescriptor = FileDescriptor(0)
 
-/// 标准输出（1）
 pub let stdout : FileDescriptor = FileDescriptor(1)
 
-/// 标准错误输出（2）
 pub let stderr : FileDescriptor = FileDescriptor(2)
 
-/// exit process 退出进程
+/// Terminate the process normally. An exit code of 0 indicates successful
+/// termination of the program. The meanings of other values is dependent on
+/// the environment.
 pub fn process_exit(exitcode : Int) -> Unit {
   proc_exit_ffi(exitcode)
 }
 
-/// accept socket 接受socket
+/// Accept a new incoming connection.
+/// Note: This is similar to `accept` in POSIX.
 pub fn accept_socket(
   self : FileDescriptor,
   flags : FDFlag
 ) -> Result[FileDescriptor, Int] {
-  memory(4).use(
-    fn(result) {
-      let errno = sock_accept_ffi(self.0, flags.0, result.offset)
-      if errno != 0 {
-        Err(errno)
-      } else {
-        Ok(FileDescriptor(result.load32(0).unwrap()))
-      }
-    },
-  )
+  let result = @ffi.malloc(4)
+  let errno = sock_accept_ffi(self._, flags._, result)
+  let res = if errno != 0 {
+    Err(errno)
+  } else {
+    Ok(FileDescriptor(@ffi.load32(result)))
+  }
+  @ffi.free(result)
+  res
 }

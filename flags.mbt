@@ -28,21 +28,21 @@ pub fn FDFlag::make() -> FDFlag {
 
 pub fn set(self : FDFlag, flag : FDFlags) -> FDFlag {
   match flag {
-    Append => FDFlag(self.0.lor((1).lsl(0)))
-    DSync => FDFlag(self.0.lor((1).lsl(1)))
-    Non_block => FDFlag(self.0.lor((1).lsl(2)))
-    RSync => FDFlag(self.0.lor((1).lsl(3)))
-    Sync => FDFlag(self.0.lor((1).lsl(4)))
+    Append => FDFlag(self._ | (1 << 0))
+    DSync => FDFlag(self._ | (1 << 1))
+    Non_block => FDFlag(self._ | (1 << 2))
+    RSync => FDFlag(self._ | (1 << 3))
+    Sync => FDFlag(self._ | (1 << 4))
   }
 }
 
 pub fn unset(self : FDFlag, flag : FDFlags) -> FDFlag {
   match flag {
-    Append => FDFlag(self.0.land((1).lsl(0).lxor(0)))
-    DSync => FDFlag(self.0.land((1).lsl(1).lxor(0)))
-    Non_block => FDFlag(self.0.land((1).lsl(2).lxor(0)))
-    RSync => FDFlag(self.0.land((1).lsl(3).lxor(0)))
-    Sync => FDFlag(self.0.land((1).lsl(4).lxor(0)))
+    Append => FDFlag(self._ & ((1 << 0) ^ 0))
+    DSync => FDFlag(self._ & ((1 << 1) ^ 0))
+    Non_block => FDFlag(self._ & ((1 << 2) ^ 0))
+    RSync => FDFlag(self._ & ((1 << 3) ^ 0))
+    Sync => FDFlag(self._ & ((1 << 4) ^ 0))
   }
 }
 
@@ -64,25 +64,25 @@ pub fn FDRight::make() -> FDRight {
 
 pub fn set(self : FDRight, flag : FDRights) -> FDRight {
   match flag {
-    Datasync => FDRight(self.0.lor(1L.lsl(0)))
-    Read => FDRight(self.0.lor(1L.lsl(1)))
-    Write => FDRight(self.0.lor(1L.lsl(6)))
-    Allocate => FDRight(self.0.lor(1L.lsl(8)))
-    Read_dir => FDRight(self.0.lor(1L.lsl(14)))
-    Sock_shutdown => FDRight(self.0.lor(1L.lsl(28)))
-    Sock_accept => FDRight(self.0.lor(1L.lsl(29)))
+    Datasync => FDRight(self._ | (1L << 0))
+    Read => FDRight(self._ | (1L << 1))
+    Write => FDRight(self._ | (1L << 6))
+    Allocate => FDRight(self._ | (1L << 8))
+    Read_dir => FDRight(self._ | (1L << 14))
+    Sock_shutdown => FDRight(self._ | (1L << 28))
+    Sock_accept => FDRight(self._ | (1L << 29))
   }
 }
 
 pub fn unset(self : FDRight, flag : FDRights) -> FDRight {
   match flag {
-    Datasync => FDRight(self.0.land(1L.lsl(0).lxor(0L)))
-    Read => FDRight(self.0.land(1L.lsl(1).lxor(0L)))
-    Write => FDRight(self.0.land(1L.lsl(6).lxor(0L)))
-    Allocate => FDRight(self.0.land(1L.lsl(8).lxor(0L)))
-    Read_dir => FDRight(self.0.land(1L.lsl(14).lxor(0L)))
-    Sock_shutdown => FDRight(self.0.land(1L.lsl(28).lxor(0L)))
-    Sock_accept => FDRight(self.0.land(1L.lsl(29).lxor(0L)))
+    Datasync => FDRight(self._ & ((1L << 0) ^ 0L))
+    Read => FDRight(self._ & ((1L << 1) ^ 0L))
+    Write => FDRight(self._ & ((1L << 6) ^ 0L))
+    Allocate => FDRight(self._ & ((1L << 8) ^ 0L))
+    Read_dir => FDRight(self._ & ((1L << 14) ^ 0L))
+    Sock_shutdown => FDRight(self._ & ((1L << 28) ^ 0L))
+    Sock_accept => FDRight(self._ & ((1L << 29) ^ 0L))
   }
 }
 
@@ -98,13 +98,13 @@ pub fn LookupFlag::make() -> LookupFlag {
 
 pub fn set(self : LookupFlag, flag : LookupFlags) -> LookupFlag {
   match flag {
-    Symlink_follow => LookupFlag(self.0.lor((1).lsl(0)))
+    Symlink_follow => LookupFlag(self._ | (1 << 0))
   }
 }
 
 pub fn unset(self : LookupFlag, flag : LookupFlags) -> LookupFlag {
   match flag {
-    Symlink_follow => LookupFlag(self.0.land((1).lsl(0).lxor(0)))
+    Symlink_follow => LookupFlag(self._ & ((1 << 0) ^ 0))
   }
 }
 
@@ -123,19 +123,19 @@ pub fn OpenFlag::make() -> OpenFlag {
 
 pub fn set(self : OpenFlag, flag : OpenFlags) -> OpenFlag {
   match flag {
-    Create => OpenFlag(self.0.lor((1).lsl(0)))
-    Directory => OpenFlag(self.0.lor((1).lsl(1)))
-    Excl => OpenFlag(self.0.lor((1).lsl(2)))
-    Trunc => OpenFlag(self.0.lor((1).lsl(3)))
+    Create => OpenFlag(self._ | (1 << 0))
+    Directory => OpenFlag(self._ | (1 << 1))
+    Excl => OpenFlag(self._ | (1 << 2))
+    Trunc => OpenFlag(self._ | (1 << 3))
   }
 }
 
 pub fn unset(self : OpenFlag, flag : OpenFlags) -> OpenFlag {
   match flag {
-    Create => OpenFlag(self.0.land((1).lsl(0).lxor(0)))
-    Directory => OpenFlag(self.0.land((1).lsl(1).lxor(0)))
-    Excl => OpenFlag(self.0.land((1).lsl(2).lxor(0)))
-    Trunc => OpenFlag(self.0.land((1).lsl(3).lxor(0)))
+    Create => OpenFlag(self._ & ((1 << 0) ^ 0))
+    Directory => OpenFlag(self._ & ((1 << 1) ^ 0))
+    Excl => OpenFlag(self._ & ((1 << 2) ^ 0))
+    Trunc => OpenFlag(self._ & ((1 << 3) ^ 0))
   }
 }
 
@@ -152,15 +152,15 @@ pub fn RIFlag::make() -> RIFlag {
 
 pub fn set(self : RIFlag, flag : RIFlags) -> RIFlag {
   match flag {
-    Recv_Peek => RIFlag(self.0.lor((1).lsl(0)))
-    Recv_Wait_all => RIFlag(self.0.lor((1).lsl(1)))
+    Recv_Peek => RIFlag(self._ | (1 << 0))
+    Recv_Wait_all => RIFlag(self._ | (1 << 1))
   }
 }
 
 pub fn unset(self : RIFlag, flag : RIFlags) -> RIFlag {
   match flag {
-    Recv_Peek => RIFlag(self.0.land((1).lsl(0).lxor(0)))
-    Recv_Wait_all => RIFlag(self.0.land((1).lsl(1).lxor(0)))
+    Recv_Peek => RIFlag(self._ & ((1 << 0) ^ 0))
+    Recv_Wait_all => RIFlag(self._ & ((1 << 1) ^ 0))
   }
 }
 
@@ -176,13 +176,13 @@ pub fn ROFlag::make() -> ROFlag {
 
 pub fn set(self : ROFlag, flag : ROFlags) -> ROFlag {
   match flag {
-    Recv_data_truncated => ROFlag(self.0.lor((1).lsl(0)))
+    Recv_data_truncated => ROFlag(self._ | (1 << 0))
   }
 }
 
 pub fn unset(self : ROFlag, flag : ROFlags) -> ROFlag {
   match flag {
-    Recv_data_truncated => ROFlag(self.0.land((1).lsl(0).lxor(0)))
+    Recv_data_truncated => ROFlag(self._ & ((1 << 0) ^ 0))
   }
 }
 
@@ -205,14 +205,14 @@ pub fn SDFlag::make() -> SDFlag {
 
 pub fn set(self : SDFlag, flag : SDFlags) -> SDFlag {
   match flag {
-    Disable_furthur_receive => SDFlag(self.0.lor((1).lsl(0)))
-    Disable_furthur_send => SDFlag(self.0.lor((1).lsl(1)))
+    Disable_furthur_receive => SDFlag(self._ | (1 << 0))
+    Disable_furthur_send => SDFlag(self._ | (1 << 1))
   }
 }
 
 pub fn unset(self : SDFlag, flag : SDFlags) -> SDFlag {
   match flag {
-    Disable_furthur_receive => SDFlag(self.0.land((1).lsl(0).lxor(0)))
-    Disable_furthur_send => SDFlag(self.0.land((1).lsl(1).lxor(0)))
+    Disable_furthur_receive => SDFlag(self._ & ((1 << 0) ^ 0))
+    Disable_furthur_send => SDFlag(self._ & ((1 << 1) ^ 0))
   }
 }

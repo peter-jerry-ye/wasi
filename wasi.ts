@@ -9,13 +9,15 @@ const wasi = new WASI(
   Deno.args,
   [],
   [
-    new OpenFile(new File(new TextEncoder().encode(""))),
+    new OpenFile(new File(new TextEncoder().encode("Hello World\n"))),
     ConsoleStdout.lineBuffered(console.log),
     ConsoleStdout.lineBuffered(console.error),
   ],
 );
 
-const wasm = await Deno.readFile("./example/test/target/wasm-gc/release/build/wasi-test.wasm");
+const wasm = await Deno.readFile(
+  "./example/test/target/wasm/debug/build/wasi-test.wasm",
+);
 const module = await WebAssembly.compile(wasm);
 const instance = await WebAssembly.instantiate(module, {
   "wasi_snapshot_preview1": wasi.wasiImport,
