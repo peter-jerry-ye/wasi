@@ -209,3 +209,24 @@ fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
 pub fn proc_exit(rval : UInt) -> Unit {
   proc_exit_ffi(rval)
 }
+
+fn random_get_ffi(buf : Int, buf_len : Int) -> UInt = "wasi_snapshot_preview1" "random_get"
+
+/// Write high-quality random data into a buffer.
+/// 
+/// This function blocks when the implementaiton is unable to immediately
+/// provide sufficient high-quality random data.
+/// 
+/// This function may execute slowly, so when larget mounts of random data are
+/// required, it's advisable to use this function to seed a pseudo-random
+/// number generator, rather than to provide the random data directly.
+pub fn random_get(buf : Bytes) -> Unit!@types.Errno {
+  let buf_len = buf.length()
+  let buf_ptr = @ffi.bytes2ptr(buf)
+  let ret = random_get_ffi(buf_ptr, buf_len)
+  let ret = @types.Errno::from_value(ret).unwrap()
+  @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+}

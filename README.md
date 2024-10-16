@@ -1,36 +1,57 @@
 # WASI
 
-WASI Preview 1 implementation for MoonBit (GC ver)
+⚠️ It's a complete rewrite since 0.17.0
 
-月兔的WASI Preview 1实现
+WASI Preview 1 implementation for MoonBit
 
-## Usage 使用
+- [x] Wasm Backend
+- [ ] Wasm-GC Backend
 
-需要使用`deno` `wasm-tools`。利用本项目的`build.ts`、`wasi.ts`与`deno.json`来构建你的项目。在安装依赖后从`.mooncakes`中取。
+## Implemented functions
 
-Requires `deno` `wasm-tools`. Use the `build.ts`, `wasi.ts` and `deno.json` that come with this package to build your project. Find them in `.mooncakes` after installed dependencies.
-
-### Build 构建
-
-- `deno task build`
-
-### Run 运行
-
-- `deno task run`
-
-## Example 使用案例
-
-假设这个包的别名为`@lib`
-
-Assuming the alias of this package is `@lib`
-
-```moonbit
-fn init {
-  let scanner = @lib.Scanner::make(@lib.stdin)
-  let str = scanner.next_line()
-  match str {
-    Some(s) => @lib.stdout.println(s)
-    None => @lib.stderr.println("None")
-  }
-}
-```
+- [x] `args_get`
+- [x] `args_sizes_get`
+- [x] `environ_get`
+- [x] `environ_sizes_get`
+- [x] `clock_res_get`
+- [x] `clock_time_get`
+- [ ] `fd_advise`
+- [ ] `fd_allocate`
+- [ ] `fd_close`
+- [ ] `fd_datasync`
+- [ ] `fd_fdstat_get`
+- [ ] `fd_fdstat_set_flags`
+- [ ] `fd_fdstat_set_rights`
+- [ ] `fd_filestat_get`
+- [ ] `fd_filestat_set_size`
+- [ ] `fd_filestat_set_times`
+- [ ] `fd_pread`
+- [ ] `fd_prestat_get`
+- [ ] `fd_prestat_dir_name`
+- [ ] `fd_pwrite`
+- [ ] `fd_read`
+- [ ] `fd_readdir`
+- [ ] `fd_renumber`
+- [ ] `fd_seek`
+- [ ] `fd_sync`
+- [ ] `fd_tell`
+- [x] `fd_write`
+- [ ] `path_create_directory`
+- [ ] `path_filestat_get`
+- [ ] `path_filestat_set_times`
+- [ ] `path_link`
+- [ ] `path_open`
+- [ ] `path_readlink`
+- [ ] `path_remove_directory`
+- [ ] `path_rename`
+- [ ] `path_symlink`
+- [ ] `path_unlink_file`
+- [ ] `poll_oneoff`
+- [x] `proc_exit`
+- [ ] `proc_raise`
+- [ ] `sched_yield`
+- [x] `random_get`
+- [ ] `sock_accept`
+- [ ] `sock_recv`
+- [ ] `sock_send`
+- [ ] `sock_shutdown`
