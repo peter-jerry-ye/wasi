@@ -122,3 +122,90 @@ pub fn environ_get() -> Array[(String, String)]!@types.Errno {
   @ffi.free(environ_buf_ptr)
   envs
 }
+
+fn clock_res_get_ffi(clock_id : UInt, resolution : Int) -> UInt = "wasi_snapshot_preview1" "clock_res_get"
+
+/// Return the resolution of a clock.
+/// 
+/// Implementations are required to provide a non-zero value for supported clocks.
+/// For unsupported clocks, return `errno::inval`.
+/// 
+/// Note: This is similar to `clock_getres` in POSIX.
+pub fn clock_res_get(
+  clock_id : @types.ClockId
+) -> @types.TimeStamp!@types.Errno {
+  let resolution_ptr = @ffi.malloc(8)
+  let ret = clock_res_get_ffi(clock_id.value(), resolution_ptr)
+  let ret = @types.Errno::from_value(ret).unwrap()
+  let resolution = @ffi.load64(resolution_ptr).reinterpret_as_uint64()
+  @ffi.free(resolution_ptr)
+  if ret != Success {
+    raise ret
+  }
+  resolution
+}
+
+fn clock_time_get_ffi(clock_id : UInt, precision : UInt64, time : Int) -> UInt = "wasi_snapshot_preview1" "clock_time_get"
+
+/// Return the time value of a clock
+/// 
+/// Note: This is similar to `clock_gettime` in POSIX.
+pub fn clock_time_get(
+  clock_id : @types.ClockId,
+  precision : @types.TimeStamp
+) -> @types.TimeStamp!@types.Errno {
+  let time_ptr = @ffi.malloc(8)
+  let ret = clock_time_get_ffi(clock_id.value(), precision._, time_ptr)
+  let ret = @types.Errno::from_value(ret).unwrap()
+  let time = @ffi.load64(time_ptr).reinterpret_as_uint64()
+  @ffi.free(time_ptr)
+  if ret != Success {
+    raise ret
+  }
+  time
+}
+
+fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = "wasi_snapshot_preview1" "fd_write"
+
+/// Write to a file descriptor.
+/// 
+/// Note: This is similar to `writev` in POSIX.
+/// 
+/// Like POSIX, any calls of `write` (and other functions to read or write)
+/// for a regular file by other threads in the WASI process should not be
+/// interleaved while `write` is executed.
+/// 
+/// Note: it may write less than demanded.
+pub fn fd_write(
+  fd : @types.Fd,
+  contents : Array[Bytes]
+) -> @types.Size!@types.Errno {
+  let iovs_len = contents.length()
+  let iovs_ptr = @ffi.malloc(iovs_len * 8)
+  for i, byte in contents {
+    let ptr = @ffi.bytes2ptr(byte)
+    @ffi.store32(iovs_ptr + i * 8, ptr)
+    @ffi.store32(iovs_ptr + i * 8 + 4, byte.length())
+    @ffi.free(ptr)
+  }
+  let nwritten_ptr = @ffi.malloc(4)
+  let ret = fd_write_ffi(fd._, iovs_ptr, iovs_len, nwritten_ptr)
+  let ret = @types.Errno::from_value(ret).unwrap()
+  let nwritten = @ffi.load32(nwritten_ptr).reinterpret_as_uint()
+  @ffi.free(nwritten_ptr)
+  @ffi.free(iovs_ptr)
+  ignore(contents)
+  if ret != Success {
+    raise ret
+  }
+  nwritten
+}
+
+fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
+
+/// Terminate the process normally. An exit code of 0 indicates successful
+/// termination of the program. The meanings of other values is dependent on
+/// the environment.
+pub fn proc_exit(rval : UInt) -> Unit {
+  proc_exit_ffi(rval)
+}

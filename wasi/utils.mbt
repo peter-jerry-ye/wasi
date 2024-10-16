@@ -1,5 +1,5 @@
 /// Decode a UTF-8 byte array into a string
-fn decode_utf8(bytes : Bytes) -> String {
+pub fn decode_utf8(bytes : Bytes) -> String {
   let buffer = @buffer.new(size_hint=bytes.length() * 4)
   for i = 0; i < bytes.length(); {
     let byte = bytes[i].to_int()
@@ -40,7 +40,7 @@ fn decode_utf8(bytes : Bytes) -> String {
 }
 
 /// Encode a string into a UTF-8 byte array
-fn encode_utf8(string : String) -> Bytes {
+pub fn encode_utf8(string : String) -> Bytes {
   let bytes = Bytes::new(string.length() * 4)
   let length = loop 0, 0 {
     offset, chari =>
