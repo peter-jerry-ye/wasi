@@ -237,6 +237,101 @@ pub fn fd_datasync(self : Fd) -> Unit!Errno {
   }
 }
 
+fn fd_fdstat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_fdstat_get"
+
+/// Get the attributes of a file descriptor.
+/// 
+/// Note: This returns similar flags to `fcntl(fd, F_GETFL)` in POSIX, as well as additional fields.
+pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
+  let buf_ptr = @ffi.malloc(24)
+  let ret = fd_fdstat_get_ffi(self._, buf_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let fs_filetype : FileType = @ffi.load8_u(buf_ptr)
+    |> FileType::from_value
+    |> Option::unwrap
+  let fs_flags : FdFlag = @ffi.load16_u(buf_ptr + 2).reinterpret_as_uint()
+  let fs_rights_base : Right = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
+  let fs_rights_inheriting : Right = @ffi.load64(buf_ptr + 16).reinterpret_as_uint64()
+  let buf = FdStat::{
+    fs_filetype,
+    fs_flags,
+    fs_rights_base,
+    fs_rights_inheriting,
+  }
+  @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+  buf
+}
+
+fn fd_fdstat_set_flags_ffi(fd : Int, flags : UInt) -> UInt = "wasi_snapshot_preview1" "fd_fdstat_set_flags"
+
+/// Adjust the flags associated with a file descriptor.
+/// 
+/// Note: This is similar to `fcntl(fd, F_SETFL, flags)` in POSIX.
+/// 
+/// @param `flags` The desired values of the file descriptor flags.
+pub fn fd_fdstat_set_flags(self : Fd, flags : FdFlag) -> Unit!Errno {
+  let ret = fd_fdstat_set_flags_ffi(self._, flags._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_fdstat_set_rights_ffi(
+  fd : Int,
+  fs_rights_base : UInt64,
+  fs_rights_inheriting : UInt64
+) -> UInt = "wasi_snapshot_preview1" "fd_fdstat_set_rights"
+
+/// Adjust the rights associated with a file descriptor.
+/// 
+/// This can only be used to remove rights, and returns `errno::notcapable` if called in a way that would attempt to add rights.
+/// 
+/// @param `fs_rights_base` The desired rights of the file descriptor.
+pub fn fd_fdstat_set_rights(
+  self : Fd,
+  fs_rights_base : Right,
+  fs_rights_inheriting : Right
+) -> Unit!Errno {
+  let ret = fd_fdstat_set_rights_ffi(
+    self._,
+    fs_rights_base._,
+    fs_rights_inheriting._,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_filestat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_filestat_get"
+
+/// Return the attributes of an open file
+pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
+  let buf_ptr = @ffi.malloc(24)
+  let ret = fd_filestat_get_ffi(self._, buf_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let dev : Device = @ffi.load64(buf_ptr).reinterpret_as_uint64()
+  let ino : Inode = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
+  let filetype : FileType = @ffi.load8_u(buf_ptr + 16)
+    |> FileType::from_value
+    |> Option::unwrap
+  let nlink : LinkCount = @ffi.load64(buf_ptr + 24).reinterpret_as_uint64()
+  let size : FileSize = @ffi.load64(buf_ptr + 32).reinterpret_as_uint64()
+  let atim : TimeStamp = @ffi.load64(buf_ptr + 40).reinterpret_as_uint64()
+  let mtim : TimeStamp = @ffi.load64(buf_ptr + 48).reinterpret_as_uint64()
+  let ctim : TimeStamp = @ffi.load64(buf_ptr + 56).reinterpret_as_uint64()
+  let buf = FileStat::{ dev, ino, filetype, nlink, size, atim, mtim, ctim }
+  @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+  buf
+}
+
 fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = "wasi_snapshot_preview1" "fd_write"
 
 /// Write to a file descriptor.

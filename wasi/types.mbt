@@ -596,7 +596,7 @@ pub fn is_set(self : FdFlag, flag : FdFlags) -> Bool {
 /// - `fs_rights_inheriting`: Maximum set of rights that may be installed on new file descriptors that are created through this file descriptor, e.g., through `path_open`.
 pub struct FdStat {
   fs_filetype : FileType
-  fs_flags : FdFlags
+  fs_flags : FdFlag
   fs_rights_base : Right
   fs_rights_inheriting : Right
 } derive(Eq, Show)

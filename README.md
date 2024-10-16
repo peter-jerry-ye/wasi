@@ -19,10 +19,10 @@ WASI Preview 1 implementation for MoonBit
 - [x] `fd_allocate`
 - [x] `fd_close`
 - [x] `fd_datasync`
-- [ ] `fd_fdstat_get`
-- [ ] `fd_fdstat_set_flags`
-- [ ] `fd_fdstat_set_rights`
-- [ ] `fd_filestat_get`
+- [x] `fd_fdstat_get`
+- [x] `fd_fdstat_set_flags`
+- [x] `fd_fdstat_set_rights`
+- [x] `fd_filestat_get`
 - [ ] `fd_filestat_set_size`
 - [ ] `fd_filestat_set_times`
 - [ ] `fd_pread`
