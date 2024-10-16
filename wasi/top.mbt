@@ -206,6 +206,10 @@ fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
 /// Terminate the process normally. An exit code of 0 indicates successful
 /// termination of the program. The meanings of other values is dependent on
 /// the environment.
+/// 
+/// Note: the accepted range may depend on the runtime, meaning that it may
+/// become an error to return a value outside the accepted range of exit codes,
+/// making the actual error code environment-dependent.
 pub fn proc_exit(rval : UInt) -> Unit {
   proc_exit_ffi(rval)
 }

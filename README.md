@@ -55,3 +55,7 @@ WASI Preview 1 implementation for MoonBit
 - [ ] `sock_recv`
 - [ ] `sock_send`
 - [ ] `sock_shutdown`
+
+## Develop
+
+- Testing: `deno task test:build && deno task test`
