@@ -3,11 +3,11 @@ fn args_sizes_get_ffi(argc : Int, size : Int) -> UInt = "wasi_snapshot_preview1"
 /// Return command-line argument data sizes.
 /// 
 /// @return `(argc, size)` where `argc` is the number of arguments and `size` is the size of the argument data.
-pub fn args_sizes_get() -> (Int, Int)!@types.Errno {
+pub fn args_sizes_get() -> (Int, Int)!Errno {
   let argc_ptr = @ffi.malloc(4)
   let size_ptr = @ffi.malloc(4)
   let ret = args_sizes_get_ffi(argc_ptr, size_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   let argc = @ffi.load32(argc_ptr)
   @ffi.free(argc_ptr)
   let size = @ffi.load32(size_ptr)
@@ -30,7 +30,7 @@ fn args_get_ffi(argv : Int, argv_buf : Int) -> UInt = "wasi_snapshot_preview1" "
 /// program. This need not be a usable filesystem path or even file name,
 /// and may even be a fixed string. Subsequent arguments are the arguments
 /// passed to the program by the user.
-pub fn args_get() -> Array[String]!@types.Errno {
+pub fn args_get() -> Array[String]!Errno {
   let (argc, size) = args_sizes_get!()
   if argc == 0 {
     return []
@@ -39,7 +39,7 @@ pub fn args_get() -> Array[String]!@types.Errno {
   let arg_buf = Bytes::new(size)
   let arg_buf_ptr = @ffi.bytes2ptr(arg_buf)
   let ret = args_get_ffi(arg_ptr_ptr, arg_buf_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
     @ffi.free(arg_ptr_ptr)
     @ffi.free(arg_buf_ptr)
@@ -68,11 +68,11 @@ fn environ_sizes_get_ffi(argc : Int, size : Int) -> UInt = "wasi_snapshot_previe
 /// Return environment variable data sizes.
 /// 
 /// @return `(argc, size)` where `argc` is the number of environment variables and `size` is the size of the buffer needed to store them.
-pub fn environ_sizes_get() -> (Int, Int)!@types.Errno {
+pub fn environ_sizes_get() -> (Int, Int)!Errno {
   let argc_ptr = @ffi.malloc(4)
   let size_ptr = @ffi.malloc(4)
   let ret = environ_sizes_get_ffi(argc_ptr, size_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   let argc = @ffi.load32(argc_ptr)
   let size = @ffi.load32(size_ptr)
   @ffi.free(argc_ptr)
@@ -88,7 +88,7 @@ fn environ_get_ffi(environ : Int, environ_buf : Int) -> UInt = "wasi_snapshot_pr
 /// Read environment variable data.
 /// 
 /// The size of the array should match that returned by `environ_sizes_get`.
-pub fn environ_get() -> Array[(String, String)]!@types.Errno {
+pub fn environ_get() -> Array[(String, String)]!Errno {
   let (argc, size) = environ_sizes_get!()
   if argc == 0 {
     return []
@@ -97,7 +97,7 @@ pub fn environ_get() -> Array[(String, String)]!@types.Errno {
   let environ_buf = Bytes::new(size)
   let environ_buf_ptr = @ffi.bytes2ptr(environ_buf)
   let ret = environ_get_ffi(environ_ptr_ptr, environ_buf_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
     @ffi.free(environ_ptr_ptr)
     @ffi.free(environ_buf_ptr)
@@ -132,11 +132,11 @@ fn clock_res_get_ffi(clock_id : UInt, resolution : Int) -> UInt = "wasi_snapshot
 /// 
 /// Note: This is similar to `clock_getres` in POSIX.
 pub fn clock_res_get(
-  clock_id : @types.ClockId
-) -> @types.TimeStamp!@types.Errno {
+  clock_id : ClockId
+) -> TimeStamp!Errno {
   let resolution_ptr = @ffi.malloc(8)
   let ret = clock_res_get_ffi(clock_id.value(), resolution_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   let resolution = @ffi.load64(resolution_ptr).reinterpret_as_uint64()
   @ffi.free(resolution_ptr)
   if ret != Success {
@@ -151,12 +151,12 @@ fn clock_time_get_ffi(clock_id : UInt, precision : UInt64, time : Int) -> UInt =
 /// 
 /// Note: This is similar to `clock_gettime` in POSIX.
 pub fn clock_time_get(
-  clock_id : @types.ClockId,
-  precision : @types.TimeStamp
-) -> @types.TimeStamp!@types.Errno {
+  clock_id : ClockId,
+  precision : TimeStamp
+) -> TimeStamp!Errno {
   let time_ptr = @ffi.malloc(8)
   let ret = clock_time_get_ffi(clock_id.value(), precision._, time_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   let time = @ffi.load64(time_ptr).reinterpret_as_uint64()
   @ffi.free(time_ptr)
   if ret != Success {
@@ -177,9 +177,9 @@ fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = 
 /// 
 /// Note: it may write less than demanded.
 pub fn fd_write(
-  fd : @types.Fd,
+  fd : Fd,
   contents : Array[Bytes]
-) -> @types.Size!@types.Errno {
+) -> Size!Errno {
   let iovs_len = contents.length()
   let iovs_ptr = @ffi.malloc(iovs_len * 8)
   for i, byte in contents {
@@ -190,7 +190,7 @@ pub fn fd_write(
   }
   let nwritten_ptr = @ffi.malloc(4)
   let ret = fd_write_ffi(fd._, iovs_ptr, iovs_len, nwritten_ptr)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   let nwritten = @ffi.load32(nwritten_ptr).reinterpret_as_uint()
   @ffi.free(nwritten_ptr)
   @ffi.free(iovs_ptr)
@@ -224,11 +224,11 @@ fn random_get_ffi(buf : Int, buf_len : Int) -> UInt = "wasi_snapshot_preview1" "
 /// This function may execute slowly, so when larget mounts of random data are
 /// required, it's advisable to use this function to seed a pseudo-random
 /// number generator, rather than to provide the random data directly.
-pub fn random_get(buf : Bytes) -> Unit!@types.Errno {
+pub fn random_get(buf : Bytes) -> Unit!Errno {
   let buf_len = buf.length()
   let buf_ptr = @ffi.bytes2ptr(buf)
   let ret = random_get_ffi(buf_ptr, buf_len)
-  let ret = @types.Errno::from_value(ret).unwrap()
+  let ret = Errno::from_value(ret).unwrap()
   @ffi.free(buf_ptr)
   if ret != Success {
     raise ret

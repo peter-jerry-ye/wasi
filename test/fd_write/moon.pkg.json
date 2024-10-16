@@ -1,7 +1,6 @@
 {
     "import": [
-        "peter-jerry-ye/wasi/wasi",
-        "peter-jerry-ye/wasi/types"
+        "peter-jerry-ye/wasi/wasi"
     ],
     "link": {
         "wasm": {
