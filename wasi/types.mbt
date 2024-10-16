@@ -521,7 +521,7 @@ pub enum Advice {
   Noreuse
 } derive(Eq, Show)
 
-pub fn value(self : Advice) -> Int {
+pub fn value(self : Advice) -> UInt {
   match self {
     Normal => 0
     Sequential => 1
@@ -532,7 +532,7 @@ pub fn value(self : Advice) -> Int {
   }
 }
 
-pub fn Advice::from_value(value : Int) -> Advice? {
+pub fn Advice::from_value(value : UInt) -> Advice? {
   match value {
     0 => Some(Normal)
     1 => Some(Sequential)

@@ -15,10 +15,10 @@ WASI Preview 1 implementation for MoonBit
 - [x] `environ_sizes_get`
 - [x] `clock_res_get`
 - [x] `clock_time_get`
-- [ ] `fd_advise`
-- [ ] `fd_allocate`
-- [ ] `fd_close`
-- [ ] `fd_datasync`
+- [x] `fd_advise`
+- [x] `fd_allocate`
+- [x] `fd_close`
+- [x] `fd_datasync`
 - [ ] `fd_fdstat_get`
 - [ ] `fd_fdstat_set_flags`
 - [ ] `fd_fdstat_set_rights`

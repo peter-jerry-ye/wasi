@@ -2,7 +2,7 @@ fn args_sizes_get_ffi(argc : Int, size : Int) -> UInt = "wasi_snapshot_preview1"
 
 /// Return command-line argument data sizes.
 /// 
-/// @return `(argc, size)` where `argc` is the number of arguments and `size` is the size of the argument data.
+/// @return Returns the number of arguments and the size of the argument string data, or an error.
 pub fn args_sizes_get() -> (Int, Int)!Errno {
   let argc_ptr = @ffi.malloc(4)
   let size_ptr = @ffi.malloc(4)
@@ -67,7 +67,7 @@ fn environ_sizes_get_ffi(argc : Int, size : Int) -> UInt = "wasi_snapshot_previe
 
 /// Return environment variable data sizes.
 /// 
-/// @return `(argc, size)` where `argc` is the number of environment variables and `size` is the size of the buffer needed to store them.
+/// @return Returns the number of environment variables arguments and the size of the environment variable data.
 pub fn environ_sizes_get() -> (Int, Int)!Errno {
   let argc_ptr = @ffi.malloc(4)
   let size_ptr = @ffi.malloc(4)
@@ -131,11 +131,12 @@ fn clock_res_get_ffi(clock_id : UInt, resolution : Int) -> UInt = "wasi_snapshot
 /// For unsupported clocks, return `errno::inval`.
 /// 
 /// Note: This is similar to `clock_getres` in POSIX.
-pub fn clock_res_get(
-  clock_id : ClockId
-) -> TimeStamp!Errno {
+/// 
+/// @param `self` The clock for which to return the resolution.  
+/// @return The resolution of the clock, or an error if one happened.
+pub fn clock_res_get(self : ClockId) -> TimeStamp!Errno {
   let resolution_ptr = @ffi.malloc(8)
-  let ret = clock_res_get_ffi(clock_id.value(), resolution_ptr)
+  let ret = clock_res_get_ffi(self.value(), resolution_ptr)
   let ret = Errno::from_value(ret).unwrap()
   let resolution = @ffi.load64(resolution_ptr).reinterpret_as_uint64()
   @ffi.free(resolution_ptr)
@@ -150,12 +151,13 @@ fn clock_time_get_ffi(clock_id : UInt, precision : UInt64, time : Int) -> UInt =
 /// Return the time value of a clock
 /// 
 /// Note: This is similar to `clock_gettime` in POSIX.
-pub fn clock_time_get(
-  clock_id : ClockId,
-  precision : TimeStamp
-) -> TimeStamp!Errno {
+/// 
+/// @param `self` The clodk for which to return the time.  
+/// @param `precision` The maximum lag (exclusive) that the returned time value may have, compared to its actual value.  
+/// @return The time value of the clock.
+pub fn clock_time_get(self : ClockId, precision : TimeStamp) -> TimeStamp!Errno {
   let time_ptr = @ffi.malloc(8)
-  let ret = clock_time_get_ffi(clock_id.value(), precision._, time_ptr)
+  let ret = clock_time_get_ffi(self.value(), precision._, time_ptr)
   let ret = Errno::from_value(ret).unwrap()
   let time = @ffi.load64(time_ptr).reinterpret_as_uint64()
   @ffi.free(time_ptr)
@@ -163,6 +165,76 @@ pub fn clock_time_get(
     raise ret
   }
   time
+}
+
+fn fd_advise_ffi(
+  fd : Int,
+  offset : UInt64,
+  len : UInt64,
+  advice : UInt
+) -> UInt = "wasi_snapshot_preview1" "fd_advise"
+
+/// Provide file advisory information on a file ddescriptor
+/// 
+/// Note: This is similar to `posix_fadvise` in POSIX.
+/// 
+/// @param `offset` The offset within the file to which the advisory applies.  
+/// @param `len` The length of the region to which the advisory applies.  
+/// @param `advice` The advice.
+pub fn fd_advise(
+  self : Fd,
+  offset : FileSize,
+  len : FileSize,
+  advice : Advice
+) -> Unit!Errno {
+  let ret = fd_advise_ffi(self._, offset._, len._, advice.value())
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_allocate_ffi(fd : Int, offset : UInt64, len : UInt64) -> UInt = "wasi_snapshot_preview1" "fd_allocate"
+
+/// Force the allocaiton of space in a file.
+/// 
+/// Note: This is similar to `posix_fallocate` in POSIX.
+/// 
+/// @param `offset` The offset at which to start allocating.  
+/// @param `len` The length of the area that is allocated.  
+/// @return The error code.
+pub fn fd_allocate(self : Fd, offset : FileSize, len : FileSize) -> Unit!Errno {
+  let ret = fd_allocate_ffi(self._, offset._, len._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_close_ffi(fd : Int) -> UInt = "wasi_snapshot_preview1" "fd_close"
+
+/// Close a file descriptor.
+/// 
+/// Note: This is similar to `close` in POSIX.
+pub fn fd_close(self : Fd) -> Unit!Errno {
+  let ret = fd_close_ffi(self._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_datasync_ffi(fd : Int) -> UInt = "wasi_snapshot_preview1" "fd_datasync"
+
+/// Synchronize the data of a file to disk.
+/// 
+/// Note: This is similar to `fdatasync` in POSIX.
+pub fn fd_datasync(self : Fd) -> Unit!Errno {
+  let ret = fd_datasync_ffi(self._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
 }
 
 fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = "wasi_snapshot_preview1" "fd_write"
@@ -176,10 +248,7 @@ fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = 
 /// interleaved while `write` is executed.
 /// 
 /// Note: it may write less than demanded.
-pub fn fd_write(
-  fd : Fd,
-  contents : Array[Bytes]
-) -> Size!Errno {
+pub fn fd_write(self : Fd, contents : Array[Bytes]) -> Size!Errno {
   let iovs_len = contents.length()
   let iovs_ptr = @ffi.malloc(iovs_len * 8)
   for i, byte in contents {
@@ -189,7 +258,7 @@ pub fn fd_write(
     @ffi.free(ptr)
   }
   let nwritten_ptr = @ffi.malloc(4)
-  let ret = fd_write_ffi(fd._, iovs_ptr, iovs_len, nwritten_ptr)
+  let ret = fd_write_ffi(self._, iovs_ptr, iovs_len, nwritten_ptr)
   let ret = Errno::from_value(ret).unwrap()
   let nwritten = @ffi.load32(nwritten_ptr).reinterpret_as_uint()
   @ffi.free(nwritten_ptr)
