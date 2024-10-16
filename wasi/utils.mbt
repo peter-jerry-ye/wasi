@@ -1,47 +1,5 @@
-// Copyright 2024 peter-jerry-ye
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-pub enum CharSet {
-  UTF8
-  UTF16
-}
-
-/// Output a string
-/// 输出字符串
-pub fn print(
-  self : FileDescriptor,
-  str : String,
-  ~charset : CharSet = UTF8
-) -> Unit {
-  match charset {
-    UTF16 => fd_write(self, [str.to_bytes()]).unwrap() |> ignore
-    UTF8 => fd_write(self, [encode_utf8(str)]).unwrap() |> ignore
-  }
-}
-
-/// Output a string with a new line ending
-/// 输出字符串（带换行符）
-pub fn println(
-  self : FileDescriptor,
-  str : String,
-  ~charset : CharSet = UTF8
-) -> Unit {
-  self.print(str + "\n", ~charset)
-}
-
 /// Decode a UTF-8 byte array into a string
-pub fn decode_utf8(bytes : Bytes) -> String {
+fn decode_utf8(bytes : Bytes) -> String {
   let buffer = @buffer.new(size_hint=bytes.length() * 4)
   for i = 0; i < bytes.length(); {
     let byte = bytes[i].to_int()
@@ -82,7 +40,7 @@ pub fn decode_utf8(bytes : Bytes) -> String {
 }
 
 /// Encode a string into a UTF-8 byte array
-pub fn encode_utf8(string : String) -> Bytes {
+fn encode_utf8(string : String) -> Bytes {
   let bytes = Bytes::new(string.length() * 4)
   let length = loop 0, 0 {
     offset, chari =>

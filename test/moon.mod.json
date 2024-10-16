@@ -1,8 +1,8 @@
 {
-    "name": "wasi-test",
+    "name": "peter-jerry-ye/wasi-test",
     "deps": {
         "peter-jerry-ye/wasi": {
-            "path": "../.."
+            "path": ".."
         }
     }
 }

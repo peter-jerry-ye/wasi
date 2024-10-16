@@ -1,0 +1,6 @@
+{
+  "import": [
+    "peter-jerry-ye/wasi/types",
+    "peter-jerry-ye/wasi/ffi"
+  ]
+}
