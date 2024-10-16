@@ -1,3 +1,5 @@
 export const snapshot = {};
 
 snapshot[`arg_get 1`] = `""`;
+
+snapshot[`environ_get 1`] = `""`;

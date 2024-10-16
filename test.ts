@@ -5,7 +5,18 @@ const textDecoder = new TextDecoder('utf-8');
 
 Deno.test("arg_get", async (t) => {
     const output = await new Deno.Command("wasmtime", {
-        args: ['test/target/wasm/debug/build/args_get/args_get.wasm'],
+        args: ['--argv0', 'args_get.wasm', 'test/target/wasm/debug/build/args_get/args_get.wasm'],
+        stdout: 'piped',
+        stderr: 'piped',
+    }).spawn().output()
+    assertEquals(output.code, 0);
+    const stdout = textDecoder.decode(output.stdout)
+    await assertSnapshot(t, stdout);
+})
+
+Deno.test("environ_get", async (t) => {
+    const output = await new Deno.Command("wasmtime", {
+        args: ["--env", "hello=world", 'test/target/wasm/debug/build/environ_get/environ_get.wasm'],
         stdout: 'piped',
         stderr: 'piped',
     }).spawn().output()
