@@ -381,8 +381,8 @@ fn fd_readdir_ffi(
 /// Entries for the special `.` and `..` directory entries are included in the
 /// sequence.
 /// 
-/// @param `cookie`: The location within the directory to start reading.
-/// @param `size`: The buffer used to read.
+/// @param `cookie`: The location within the directory to start reading.  
+/// @param `size`: The buffer used to read.  
 /// @return The entries untruncated and whether there's still other entries.
 pub fn fd_readdir(
   self : Fd,
@@ -459,6 +459,234 @@ pub fn fd_write(self : Fd, contents : Array[Bytes]) -> Size!Errno {
     raise ret
   }
   nwritten
+}
+
+fn path_create_directory_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "path_create_directory"
+
+/// Create a directory.
+/// 
+/// Note: This is similar to `mkdirat` in POSIX.
+/// 
+/// @param `path` The path at which to create the directory.
+pub fn path_create_directory(self : Fd, path : String) -> Unit!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let ret = path_create_directory_ffi(self._, path_ptr, path_len)
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(path_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn path_filestat_get_ffi(
+  fd : Int,
+  flags : UInt,
+  path : Int,
+  path_len : Int,
+  buf : Int
+) -> UInt = "wasi_snapshot_preview1" "path_filestat_get"
+
+/// Return the attributes of a file or directory.
+/// 
+/// Note: This is similar to `stat` in POSIX.
+/// 
+/// @param `flags` Flags determining the method of how the path is resolved.  
+/// @param `path` The path of the file or directory to inspect.
+pub fn path_filestat_get(
+  self : Fd,
+  flags : LookupFlag,
+  path : String
+) -> FileStat!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let buf_ptr = @ffi.malloc(24)
+  let ret = path_filestat_get_ffi(self._, flags._, path_ptr, path_len, buf_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(path_ptr)
+  if ret != Success {
+    @ffi.free(buf_ptr)
+    raise ret
+  }
+  let dev : Device = @ffi.load64(buf_ptr).reinterpret_as_uint64()
+  let ino : Inode = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
+  let filetype : FileType = @ffi.load8_u(buf_ptr + 16)
+    |> FileType::from_value
+    |> Option::unwrap
+  let nlink : LinkCount = @ffi.load64(buf_ptr + 24).reinterpret_as_uint64()
+  let size : FileSize = @ffi.load64(buf_ptr + 32).reinterpret_as_uint64()
+  let atim : TimeStamp = @ffi.load64(buf_ptr + 40).reinterpret_as_uint64()
+  let mtim : TimeStamp = @ffi.load64(buf_ptr + 48).reinterpret_as_uint64()
+  let ctim : TimeStamp = @ffi.load64(buf_ptr + 56).reinterpret_as_uint64()
+  let buf = FileStat::{ dev, ino, filetype, nlink, size, atim, mtim, ctim }
+  @ffi.free(buf_ptr)
+  buf
+}
+
+fn path_filestat_set_times_ffi(
+  fd : Int,
+  flags : UInt,
+  path : Int,
+  path_len : Int,
+  atim : UInt64,
+  mtim : UInt64,
+  fst_flags : UInt
+) -> UInt = "wasi_snapshot_preview1" "path_filestat_set_times"
+
+/// Adjust the timestamps of a file or directory.
+/// 
+/// Note: This is similar to `utimensat` in POSIX.
+/// 
+/// @param `flag` Flags determining the method of how the path is resolved.  
+/// @param `path` The path of the file or directory to operate on.  
+/// @param `atim` The desired values of the data access timestamp.  
+/// @param `mtim` The desired values of the data modification timestamp.  
+/// @param `fst_flags` A bitmask indicating which timestamps to adjust.
+pub fn path_filestat_set_times(
+  self : Fd,
+  flags : LookupFlag,
+  path : String,
+  atim : TimeStamp,
+  mtim : TimeStamp,
+  fst_flags : FstFlag
+) -> Unit!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let ret = path_filestat_set_times_ffi(
+    self._,
+    flags._,
+    path_ptr,
+    path_len,
+    atim._,
+    mtim._,
+    fst_flags._,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(path_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn path_link_ffi(
+  old_fd : Int,
+  old_flags : UInt,
+  old_path : Int,
+  old_path_len : Int,
+  new_fd : Int,
+  new_path : Int,
+  new_path_len : Int
+) -> UInt = "wasi_snapshot_preview1" "path_link"
+
+/// Create a hard link.
+/// 
+/// Note: This is similar to `linkat` in POSIX.
+/// 
+/// @param `old_flags` Flags determining the method of how the path is resolved.  
+/// @param `old_path` The source path from which to link.  
+/// @param `new_fd` The wroking directory at which the resolution of the new path starts.  
+/// @param `new_path` The destination path at which to create the hard link.
+pub fn path_link(
+  old_fd : Fd,
+  old_flags : LookupFlag,
+  old_path : String,
+  new_fd : Fd,
+  new_path : String
+) -> Unit!Errno {
+  let old_path_bytes = old_path |> encode_utf8
+  let old_path_len = old_path_bytes.length()
+  let old_path_ptr = @ffi.bytes2ptr(old_path_bytes)
+  let new_path_bytes = new_path |> encode_utf8
+  let new_path_len = new_path_bytes.length()
+  let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
+  let ret = path_link_ffi(
+    old_fd._,
+    old_flags._,
+    old_path_ptr,
+    old_path_len,
+    new_fd._,
+    new_path_ptr,
+    new_path_len,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(old_path_ptr)
+  @ffi.free(new_path_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn path_open_ffi(
+  dirfd : Int,
+  dirflags : UInt,
+  path : Int,
+  path_len : Int,
+  oflags : UInt,
+  fs_rights_base : UInt64,
+  fs_rights_inheriting : UInt64,
+  fs_flags : UInt,
+  fd : Int
+) -> UInt = "wasi_snapshot_preview1" "path_open"
+
+/// Open a file or directory.
+/// 
+/// The returned file descriptor is not guaranteed to be the lowest-numbered
+/// file descriptor not currently open; it is randomized to prevent
+/// applications from depending on making assumptions about indexes, since this
+/// is error-prone in multi-threaded contexts. The returned file descriptor is
+/// guaranteed to be less than 2^31.
+/// 
+/// Note: This is similar to `openat` in POSIX.
+/// 
+/// @param `dirflags` Flags determining the method of how the path is resolved.  
+/// @param `path` The path of the file or directory to open.  
+/// @param `oflags` The method by which to open the file.  
+/// @param `fs_rights_base` The initial rights of the newly created file descriptor. The
+///        implementation is allowed to return a file descriptor with fewer rights
+///        than specified, if and only if those rights do not apply to the type of
+///        file being opened. The *base* rights are rights that will apply to operations 
+///        using the file descriptor itself.  
+/// @param `fs_rights_inheriting` The initial rights of the newly created file descriptor. The
+///        implementation is allowed to return a file descriptor with fewer rights
+///        than specified, if and only if those rights do not apply to the type of
+///        file being opened. The *inheriting* rights are rights that apply to
+///        file descriptors derived from it.  
+/// @return The file descriptor of the file that has been opened.
+pub fn path_open(
+  self : Fd,
+  dirflags : LookupFlag,
+  path : String,
+  oflags : OpenFlag,
+  fs_rights_base : Right,
+  fs_rights_inheriting : Right,
+  fs_flags : FdFlag
+) -> Fd!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let fd_ptr = @ffi.malloc(4)
+  let ret = path_open_ffi(
+    self._,
+    dirflags._,
+    path_ptr,
+    path_len,
+    oflags._,
+    fs_rights_base._,
+    fs_rights_inheriting._,
+    fs_flags._,
+    fd_ptr
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(path_ptr)
+  let fd = @ffi.load32(fd_ptr)
+  @ffi.free(fd_ptr)
+  if ret != Success {
+    raise ret
+  }
+  Fd(fd)
 }
 
 fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"

@@ -36,11 +36,11 @@ WASI Preview 1 implementation for MoonBit
 - [ ] `fd_sync`
 - [ ] `fd_tell`
 - [x] `fd_write`
-- [ ] `path_create_directory`
-- [ ] `path_filestat_get`
-- [ ] `path_filestat_set_times`
-- [ ] `path_link`
-- [ ] `path_open`
+- [x] `path_create_directory`
+- [x] `path_filestat_get`
+- [x] `path_filestat_set_times`
+- [x] `path_link`
+- [x] `path_open`
 - [ ] `path_readlink`
 - [ ] `path_remove_directory`
 - [ ] `path_rename`
@@ -58,4 +58,7 @@ WASI Preview 1 implementation for MoonBit
 
 ## Develop
 
-- Testing: `deno task test:build && deno task test`
+### Testing
+
+- Requirements: you need wasmtime & deno. You may use wasmedge or wamr if you replace the `wasmtime` in `test.ts`, but it may cause different testing result.
+- Comamnds: `deno task test:build && deno task test`
