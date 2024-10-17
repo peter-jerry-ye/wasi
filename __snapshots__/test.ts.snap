@@ -10,6 +10,11 @@ snapshot[`fd_fdstat_get 1`] = `
 "
 `;
 
+snapshot[`fd_readdir 1`] = `
+'([(".", {d_next: DirCookie(1), d_ino: Inode(8473390953685618951), d_namlen: DirNamlen(1), d_type: Directory}), ("..", {d_next: DirCookie(2), d_ino: Inode(8473390953685618951), d_namlen: DirNamlen(2), d_type: Directory}), ("moon.pkg.json", {d_next: DirCookie(3), d_ino: Inode(8102894999335674773), d_namlen: DirNamlen(13), d_type: Regular_file}), ("top.mbt", {d_next: DirCookie(4), d_ino: Inode(721776640816928401), d_namlen: DirNamlen(7), d_type: Regular_file})], false)
+'
+`;
+
 snapshot[`fd_write 1`] = `
 "Hello
 Size(6)"

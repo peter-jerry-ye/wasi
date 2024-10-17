@@ -36,6 +36,18 @@ Deno.test("fd_fdstat_get", async (t) => {
     await assertSnapshot(t, stdout);
 })
 
+Deno.test("fd_readdir", async (t) => {
+    // Notice that wasmtime may not write everything required in the buffer.
+    const output = await new Deno.Command("wasmtime", {
+        args: ['--dir', 'test/fd_readdir', 'test/target/wasm/debug/build/fd_readdir/fd_readdir.wasm'],
+        stdout: 'piped',
+        stderr: 'piped',
+    }).spawn().output()
+    assertEquals(output.code, 0);
+    const stdout = textDecoder.decode(output.stdout)
+    await assertSnapshot(t, stdout);
+})
+
 Deno.test("fd_write", async (t) => {
     // Notice that wasmtime may not write everything required in the buffer.
     const output = await new Deno.Command("wasmtime", {

@@ -332,6 +332,75 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   buf
 }
 
+fn fd_readdir_ffi(
+  fd : Int,
+  buf : Int,
+  buf_len : Int,
+  cookie : UInt64,
+  buf_used : Int
+) -> UInt = "wasi_snapshot_preview1" "fd_readdir"
+
+/// Read directory entries from a directory.
+/// When successful, the contents of the output buffer consist of a sequence of
+/// directory entries. Each directory entry consists of a `dirent` object,
+/// followed by `dirent::d_namlen` bytes holding the name of the directory
+/// entry.
+///
+/// This function fills the output buffer as much as possible, potentially
+/// truncating the last directory entry. This allows the caller to grow its
+/// read buffer size in case it's too small to fit a single large directory
+/// entry, or skip the oversized directory entry.
+///
+/// Entries for the special `.` and `..` directory entries are included in the
+/// sequence.
+/// 
+/// @param `cookie`: The location within the directory to start reading.
+/// @param `size`: The buffer used to read.
+/// @return The entries untruncated and whether there's still other entries.
+pub fn fd_readdir(
+  self : Fd,
+  ~cookie : DirCookie = DirCookie(0),
+  ~buffer : Bytes = Bytes::new(4096)
+) -> (Array[(String, DirEnt)], Bool)!Errno {
+  let buf_len = buffer.length()
+  let buf_ptr = @ffi.bytes2ptr(buffer)
+  let buf_used_ptr = @ffi.malloc(4)
+  let ret = fd_readdir_ffi(self._, buf_ptr, buf_len, cookie._, buf_used_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let buf_used = @ffi.load32(buf_used_ptr)
+  @ffi.free(buf_used_ptr)
+  @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+  let entries = []
+  for i = 0; i < buf_used; {
+    if i + 24 > buf_used {
+      // truncated
+      break (entries, true)
+    }
+    let d_next : DirCookie = @ffi.load64(buf_ptr + i).reinterpret_as_uint64()
+    let d_ino : Inode = @ffi.load64(buf_ptr + i + 8).reinterpret_as_uint64()
+    let namlen = @ffi.load32(buf_ptr + i + 16)
+    let d_namlen : DirNamlen = namlen.reinterpret_as_uint()
+    let d_type : FileType = @ffi.load8_u(buf_ptr + i + 20)
+      |> FileType::from_value
+      |> Option::unwrap
+    if i + 24 + d_namlen._.reinterpret_as_int() > buf_used {
+      // truncated
+      break (entries, true)
+    }
+    let string = Bytes::new(namlen)
+    string.blit(0, buffer, i + 24, namlen)
+    entries.push(
+      (string |> decode_utf8, DirEnt::{ d_next, d_ino, d_namlen, d_type }),
+    )
+    continue i + 24 + namlen
+  } else {
+    (entries, buf_used == buf_len)
+  }
+}
+
 fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = "wasi_snapshot_preview1" "fd_write"
 
 /// Write to a file descriptor.

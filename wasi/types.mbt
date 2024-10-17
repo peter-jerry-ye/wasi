@@ -497,7 +497,7 @@ pub fn FileType::from_value(value : Int) -> FileType? {
 /// - `d_ino`: The serial number of the file referred to by this directory entry.
 /// - `d_namlen`: The length of the name of the directory entry.
 /// - `d_type`: The type of the file referred to by this directory entry.
-pub struct Dirent {
+pub struct DirEnt {
   d_next : DirCookie
   d_ino : Inode
   d_namlen : DirNamlen
