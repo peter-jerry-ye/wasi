@@ -333,9 +333,48 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   buf
 }
 
+fn fd_pread_ffi(
+  fd : Int,
+  iovs : Int,
+  iovs_len : Int,
+  offset : UInt64,
+  nread : Int
+) -> UInt = "wasi_snapshot_preview1" "fd_pread"
+
+/// Read from a file descriptor, without using and updating the file descriptor's offset.
+/// 
+/// Note: This is similar to `preadv` in Linux (and other Unix-es).
+pub fn fd_pread(
+  self : Fd,
+  iovs : Array[Bytes],
+  offset : FileSize
+) -> Size!Errno {
+  let iovs_len = iovs.length()
+  let iovs_ptr = @ffi.malloc(iovs_len * 8)
+  for i, byte in iovs {
+    let ptr = @ffi.bytes2ptr(byte)
+    @ffi.store32(iovs_ptr + i * 8, ptr)
+    @ffi.store32(iovs_ptr + i * 8 + 4, byte.length())
+    @ffi.free(ptr)
+  }
+  let nread_ptr = @ffi.malloc(4)
+  let ret = fd_pread_ffi(self._, iovs_ptr, iovs_len, offset._, nread_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let nread = @ffi.load32(nread_ptr).reinterpret_as_uint()
+  @ffi.free(nread_ptr)
+  @ffi.free(iovs_ptr)
+  if ret != Success {
+    raise ret
+  }
+  ignore(iovs)
+  nread
+}
+
 fn fd_prestat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_prestat_get"
 
 /// Return a description of the given preopened file descriptor.
+/// 
+/// Note: consider using `fd_prestat_dir_name` directly.
 pub fn fd_prestat_get(self : Fd) -> PreStat!Errno {
   let buf_ptr = @ffi.malloc(8)
   let ret = fd_prestat_get_ffi(self._, buf_ptr)
@@ -463,6 +502,88 @@ pub fn fd_readdir(
   } else {
     (entries, buf_used == buf_len)
   }
+}
+
+fn fd_renumber_ffi(fd : Int, to : Int) -> UInt = "wasi_snapshot_preview1" "fd_renumber"
+
+/// Atomically replace a file descriptor by renumbering another file descriptor.
+///
+/// Due to the strong focus on thread safety, this environment does not provide
+/// a mechanism to duplicate or renumber a file descriptor to an arbitrary
+/// number, like `dup2()`. This would be prone to race conditions, as an actual
+/// file descriptor with the same number could be allocated by a different
+/// thread at the same time.
+///
+/// This function provides a way to atomically renumber file descriptors, which
+/// would disappear if `dup2()` were to be removed entirely.
+pub fn fd_renumber(self : Fd, to : Fd) -> Unit!Errno {
+  let ret = fd_renumber_ffi(self._, to._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_seek_ffi(
+  fd : Int,
+  offset : Int64,
+  whence : UInt,
+  newoffset : Int
+) -> UInt = "wasi_snapshot_preview1" "fd_seek"
+
+/// Move the offset of a file descriptor.
+/// 
+/// Note: This is similar to `lseek` in POSIX.
+/// 
+/// @param `offset` The number of bytes to move.  
+/// @param `whence` The base from which the offset is calculated.  
+/// @return The new offset of the file descriptor, relative to the start of the file.
+pub fn fd_seek(
+  self : Fd,
+  offset : FileDelta,
+  whence : Whence
+) -> FileSize!Errno {
+  let newoffset_ptr = @ffi.malloc(8)
+  let ret = fd_seek_ffi(self._, offset._, whence.value(), newoffset_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let newoffset = @ffi.load64(newoffset_ptr).reinterpret_as_uint64()
+  @ffi.free(newoffset_ptr)
+  if ret != Success {
+    raise ret
+  }
+  newoffset
+}
+
+fn fd_sync_ffi(fd : Int) -> UInt = "wasi_snapshot_preview1" "fd_sync"
+
+/// Synchronize the data and metadata of a file to disk.
+/// 
+/// Note: This is similar to `fsync` in POSIX.
+pub fn fd_sync(self : Fd) -> Unit!Errno {
+  let ret = fd_sync_ffi(self._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_tell_ffi(fd : Int, newoffset : Int) -> UInt = "wasi_snapshot_preview1" "fd_tell"
+
+/// Return the current offset of a file descriptor.
+/// 
+/// Note: This is similar to `lseek(fd, 0, SEEK_CUR)` in POSIX.
+/// 
+/// @return The current offset of the file descriptor, relative to the start of the file.
+pub fn fd_tell(self : Fd) -> FileSize!Errno {
+  let newoffset_ptr = @ffi.malloc(8)
+  let ret = fd_tell_ffi(self._, newoffset_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let newoffset = @ffi.load64(newoffset_ptr).reinterpret_as_uint64()
+  @ffi.free(newoffset_ptr)
+  if ret != Success {
+    raise ret
+  }
+  newoffset
 }
 
 fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = "wasi_snapshot_preview1" "fd_write"

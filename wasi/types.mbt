@@ -415,7 +415,7 @@ pub enum Whence {
   End
 } derive(Eq, Show)
 
-pub fn value(self : Whence) -> Int {
+pub fn value(self : Whence) -> UInt {
   match self {
     Set => 0
     Cur => 1
@@ -423,7 +423,7 @@ pub fn value(self : Whence) -> Int {
   }
 }
 
-pub fn Whence::from_value(value : Int) -> Whence? {
+pub fn Whence::from_value(value : UInt) -> Whence? {
   match value {
     0 => Some(Set)
     1 => Some(Cur)

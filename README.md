@@ -1,8 +1,6 @@
-# WASI
+# WASI Preview 1 implementation for MoonBit
 
 ⚠️ It's a complete rewrite since 0.17.0
-
-WASI Preview 1 implementation for MoonBit
 
 - [x] Wasm Backend
 - [ ] Wasm-GC Backend
@@ -25,16 +23,16 @@ WASI Preview 1 implementation for MoonBit
 - [x] `fd_filestat_get`
 - [ ] `fd_filestat_set_size`
 - [ ] `fd_filestat_set_times`
-- [ ] `fd_pread`
+- [x] `fd_pread`
 - [x] `fd_prestat_get`
 - [x] `fd_prestat_dir_name`
-- [ ] `fd_pwrite`
+- [x] `fd_pwrite`
 - [x] `fd_read`
 - [x] `fd_readdir`
-- [ ] `fd_renumber`
-- [ ] `fd_seek`
-- [ ] `fd_sync`
-- [ ] `fd_tell`
+- [x] `fd_renumber`
+- [x] `fd_seek`
+- [x] `fd_sync`
+- [x] `fd_tell`
 - [x] `fd_write`
 - [x] `path_create_directory`
 - [x] `path_filestat_get`
