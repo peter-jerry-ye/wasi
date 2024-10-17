@@ -249,9 +249,9 @@ pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
   let fs_filetype : FileType = @ffi.load8_u(buf_ptr)
     |> FileType::from_value
     |> Option::unwrap
-  let fs_flags : FdFlag = @ffi.load16_u(buf_ptr + 2).reinterpret_as_uint()
-  let fs_rights_base : Right = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
-  let fs_rights_inheriting : Right = @ffi.load64(buf_ptr + 16).reinterpret_as_uint64()
+  let fs_flags : FdFlags = @ffi.load16_u(buf_ptr + 2).reinterpret_as_uint()
+  let fs_rights_base : Rights = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
+  let fs_rights_inheriting : Rights = @ffi.load64(buf_ptr + 16).reinterpret_as_uint64()
   let buf = FdStat::{
     fs_filetype,
     fs_flags,
@@ -272,7 +272,7 @@ fn fd_fdstat_set_flags_ffi(fd : Int, flags : UInt) -> UInt = "wasi_snapshot_prev
 /// Note: This is similar to `fcntl(fd, F_SETFL, flags)` in POSIX.
 /// 
 /// @param `flags` The desired values of the file descriptor flags.
-pub fn fd_fdstat_set_flags(self : Fd, flags : FdFlag) -> Unit!Errno {
+pub fn fd_fdstat_set_flags(self : Fd, flags : FdFlags) -> Unit!Errno {
   let ret = fd_fdstat_set_flags_ffi(self._, flags._)
   let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
@@ -293,8 +293,8 @@ fn fd_fdstat_set_rights_ffi(
 /// @param `fs_rights_base` The desired rights of the file descriptor.
 pub fn fd_fdstat_set_rights(
   self : Fd,
-  fs_rights_base : Right,
-  fs_rights_inheriting : Right
+  fs_rights_base : Rights,
+  fs_rights_inheriting : Rights
 ) -> Unit!Errno {
   let ret = fd_fdstat_set_rights_ffi(
     self._,
@@ -496,7 +496,7 @@ fn path_filestat_get_ffi(
 /// @param `path` The path of the file or directory to inspect.
 pub fn path_filestat_get(
   self : Fd,
-  flags : LookupFlag,
+  flags : LookupFlags,
   path : String
 ) -> FileStat!Errno {
   let path_bytes = path |> encode_utf8
@@ -546,11 +546,11 @@ fn path_filestat_set_times_ffi(
 /// @param `fst_flags` A bitmask indicating which timestamps to adjust.
 pub fn path_filestat_set_times(
   self : Fd,
-  flags : LookupFlag,
+  flags : LookupFlags,
   path : String,
   atim : TimeStamp,
   mtim : TimeStamp,
-  fst_flags : FstFlag
+  fst_flags : FstFlags
 ) -> Unit!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
@@ -591,7 +591,7 @@ fn path_link_ffi(
 /// @param `new_path` The destination path at which to create the hard link.
 pub fn path_link(
   old_fd : Fd,
-  old_flags : LookupFlag,
+  old_flags : LookupFlags,
   old_path : String,
   new_fd : Fd,
   new_path : String
@@ -657,12 +657,12 @@ fn path_open_ffi(
 /// @return The file descriptor of the file that has been opened.
 pub fn path_open(
   self : Fd,
-  dirflags : LookupFlag,
+  dirflags : LookupFlags,
   path : String,
-  oflags : OpenFlag,
-  fs_rights_base : Right,
-  fs_rights_inheriting : Right,
-  fs_flags : FdFlag
+  oflags : OpenFlags,
+  fs_rights_base : Rights,
+  fs_rights_inheriting : Rights,
+  fs_flags : FdFlags
 ) -> Fd!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()

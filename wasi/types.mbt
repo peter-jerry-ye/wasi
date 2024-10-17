@@ -297,14 +297,14 @@ test "errno" {
 }
 
 ///  File descriptor rights, determining which actions may be performed.
-pub type Right UInt64 derive(Eq, Show)
+pub type Rights UInt64 derive(Eq, Show)
 
-pub fn Right::new() -> Right {
+pub fn Rights::new() -> Rights {
   0
 }
 
 ///  File descriptor rights, determining which actions may be performed.
-pub enum Rights {
+pub enum Right {
   Fd_datasync
   Fd_read
   Fd_seek
@@ -337,7 +337,7 @@ pub enum Rights {
   Sock_accept
 } derive(Eq, Show)
 
-pub fn value(self : Rights) -> UInt64 {
+pub fn value(self : Right) -> UInt64 {
   match self {
     Fd_datasync => 1UL << 1
     Fd_read => 1UL << 2
@@ -372,15 +372,15 @@ pub fn value(self : Rights) -> UInt64 {
   }
 }
 
-pub fn set(self : Right, right : Rights) -> Right {
+pub fn set(self : Rights, right : Right) -> Rights {
   self._ | right.value()
 }
 
-pub fn unset(self : Right, right : Rights) -> Right {
+pub fn unset(self : Rights, right : Right) -> Rights {
   self._ & (right.value() ^ 0)
 }
 
-pub fn is_set(self : Right, right : Rights) -> Bool {
+pub fn is_set(self : Rights, right : Right) -> Bool {
   (self._ & right.value()) != 0
 }
 
@@ -545,9 +545,9 @@ pub fn Advice::from_value(value : UInt) -> Advice? {
 }
 
 /// File descriptor flag.
-pub type FdFlag UInt derive(Eq, Show)
+pub type FdFlags UInt derive(Eq, Show)
 
-pub fn FdFlag::new() -> FdFlag {
+pub fn FdFlags::new() -> FdFlags {
   0
 }
 
@@ -558,7 +558,7 @@ pub fn FdFlag::new() -> FdFlag {
 /// - Nonblock: Non-blocking mode.
 /// - Rsync: Synchronized read I/O operations.
 /// - Sync: Write according to synchronized I/O file integrity completion. In addition to synchronizing the data stored in the file, the implementation may also synchronously update the file's metadata.
-pub enum FdFlags {
+pub enum FdFlag {
   Append
   Dsync
   Nonblock
@@ -566,7 +566,7 @@ pub enum FdFlags {
   Sync
 } derive(Eq, Show)
 
-pub fn value(self : FdFlags) -> UInt {
+pub fn value(self : FdFlag) -> UInt {
   match self {
     Append => 1
     Dsync => 2
@@ -576,15 +576,15 @@ pub fn value(self : FdFlags) -> UInt {
   }
 }
 
-pub fn set(self : FdFlag, flag : FdFlags) -> FdFlag {
+pub fn set(self : FdFlags, flag : FdFlag) -> FdFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : FdFlag, flag : FdFlags) -> FdFlag {
+pub fn unset(self : FdFlags, flag : FdFlag) -> FdFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : FdFlag, flag : FdFlags) -> Bool {
+pub fn is_set(self : FdFlags, flag : FdFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
@@ -596,9 +596,9 @@ pub fn is_set(self : FdFlag, flag : FdFlags) -> Bool {
 /// - `fs_rights_inheriting`: Maximum set of rights that may be installed on new file descriptors that are created through this file descriptor, e.g., through `path_open`.
 pub struct FdStat {
   fs_filetype : FileType
-  fs_flags : FdFlag
-  fs_rights_base : Right
-  fs_rights_inheriting : Right
+  fs_flags : FdFlags
+  fs_rights_base : Rights
+  fs_rights_inheriting : Rights
 } derive(Eq, Show)
 
 /// Identifier for a device containing a file system. Can be used in combination
@@ -606,9 +606,9 @@ pub struct FdStat {
 pub type Device UInt64 derive(Eq, Show)
 
 /// Which file time attributes to adjust
-pub type FstFlag UInt derive(Eq, Show)
+pub type FstFlags UInt derive(Eq, Show)
 
-pub fn FstFlag::new() -> FstFlag {
+pub fn FstFlags::new() -> FstFlags {
   0
 }
 
@@ -618,14 +618,14 @@ pub fn FstFlag::new() -> FstFlag {
 /// - Atim_now: Adjust the last access timestamp to the time of clock `clockid::realtime`.
 /// - Mtim: Adjust the last modification timestamp to the value stored in `filestat::mtim`.
 /// - Mtim_now: Adjust the last modification timestamp to the time of clock `clockid::realtime`.
-pub enum FstFlags {
+pub enum FstFlag {
   Atim
   Atim_now
   Mtim
   Mtim_now
 } derive(Eq, Show)
 
-pub fn value(self : FstFlags) -> UInt {
+pub fn value(self : FstFlag) -> UInt {
   match self {
     Atim => 1
     Atim_now => 2
@@ -634,51 +634,51 @@ pub fn value(self : FstFlags) -> UInt {
   }
 }
 
-pub fn set(self : FstFlag, flag : FstFlags) -> FstFlag {
+pub fn set(self : FstFlags, flag : FstFlag) -> FstFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : FstFlag, flag : FstFlags) -> FstFlag {
+pub fn unset(self : FstFlags, flag : FstFlag) -> FstFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : FstFlag, flag : FstFlags) -> Bool {
+pub fn is_set(self : FstFlags, flag : FstFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
 /// Flags dermining the method of how paths are resolved.
-pub type LookupFlag UInt derive(Eq, Show)
+pub type LookupFlags UInt derive(Eq, Show)
 
-pub fn LookupFlag::new() -> LookupFlag {
+pub fn LookupFlags::new() -> LookupFlags {
   0
 }
 
-pub enum LookupFlags {
+pub enum LookupFlag {
   Symlink_follow
 } derive(Eq, Show)
 
-pub fn value(self : LookupFlags) -> UInt {
+pub fn value(self : LookupFlag) -> UInt {
   match self {
     Symlink_follow => 1
   }
 }
 
-pub fn set(self : LookupFlag, flag : LookupFlags) -> LookupFlag {
+pub fn set(self : LookupFlags, flag : LookupFlag) -> LookupFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : LookupFlag, flag : LookupFlags) -> LookupFlag {
+pub fn unset(self : LookupFlags, flag : LookupFlag) -> LookupFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : LookupFlag, flag : LookupFlags) -> Bool {
+pub fn is_set(self : LookupFlags, flag : LookupFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
 /// Open flags used by `path_open`.
-pub type OpenFlag UInt derive(Eq, Show)
+pub type OpenFlags UInt derive(Eq, Show)
 
-pub fn OpenFlag::new() -> OpenFlag {
+pub fn OpenFlags::new() -> OpenFlags {
   0
 }
 
@@ -688,14 +688,14 @@ pub fn OpenFlag::new() -> OpenFlag {
 /// - Directory: Fail if not a directory.
 /// - Excl: Fail if the file already exists.
 /// - Trunc: Truncate the file to size 0.
-pub enum OpenFlags {
+pub enum OpenFlag {
   Create
   Directory
   Excl
   Trunc
 } derive(Eq, Show)
 
-pub fn value(self : OpenFlags) -> UInt {
+pub fn value(self : OpenFlag) -> UInt {
   match self {
     Create => 1
     Directory => 2
@@ -704,15 +704,15 @@ pub fn value(self : OpenFlags) -> UInt {
   }
 }
 
-pub fn set(self : OpenFlag, flag : OpenFlags) -> OpenFlag {
+pub fn set(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : OpenFlag, flag : OpenFlags) -> OpenFlag {
+pub fn unset(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : OpenFlag, flag : OpenFlags) -> Bool {
+pub fn is_set(self : OpenFlags, flag : OpenFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
@@ -756,34 +756,34 @@ pub enum EventType {
 } derive(Eq, Show)
 
 /// The state of the file descriptor subscribed to with `eventtype::fd_read` or `eventtype::fd_write`.
-pub type EventRWFlag UInt derive(Eq, Show)
+pub type EventRWFlags UInt derive(Eq, Show)
 
-pub fn EventRWFlag::new() -> EventRWFlag {
+pub fn EventRWFlags::new() -> EventRWFlags {
   0
 }
 
 /// The state of the file descriptor subscribed to with `eventtype::fd_read` or `eventtype::fd_write`.
 /// 
 /// - Fd_readwrite_hangup: The peer of this socket has closed or disconnected.
-pub enum EventRWFlags {
+pub enum EventRWFlag {
   Fd_readwrite_hangup
 } derive(Eq, Show)
 
-pub fn value(self : EventRWFlags) -> UInt {
+pub fn value(self : EventRWFlag) -> UInt {
   match self {
     Fd_readwrite_hangup => 1
   }
 }
 
-pub fn set(self : EventRWFlag, flag : EventRWFlags) -> EventRWFlag {
-  EventRWFlag(self._ | flag.value())
+pub fn set(self : EventRWFlags, flag : EventRWFlag) -> EventRWFlags {
+  EventRWFlags(self._ | flag.value())
 }
 
-pub fn unset(self : EventRWFlag, flag : EventRWFlags) -> EventRWFlag {
-  EventRWFlag(self._ & (flag.value() ^ 0))
+pub fn unset(self : EventRWFlags, flag : EventRWFlag) -> EventRWFlags {
+  EventRWFlags(self._ & (flag.value() ^ 0))
 }
 
-pub fn is_set(self : EventRWFlag, flag : EventRWFlags) -> Bool {
+pub fn is_set(self : EventRWFlags, flag : EventRWFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
@@ -794,7 +794,7 @@ pub fn is_set(self : EventRWFlag, flag : EventRWFlags) -> Bool {
 /// - `flags`: The state of the file descriptor.
 pub struct Event_fd_readwrite {
   nbytes : FileSize
-  flags : EventRWFlag
+  flags : EventRWFlags
 } derive(Eq, Show)
 
 /// An event that occurred.
@@ -811,9 +811,9 @@ pub struct Event {
 } derive(Eq, Show)
 
 /// Flags determining how to interpret the timestamp provided in `subscription::timeout`.
-pub type SubclockFlag UInt derive(Eq, Show)
+pub type SubclockFlags UInt derive(Eq, Show)
 
-pub fn SubclockFlag::new() -> SubclockFlag {
+pub fn SubclockFlags::new() -> SubclockFlags {
   0
 }
 
@@ -825,25 +825,25 @@ pub fn SubclockFlag::new() -> SubclockFlag {
 ///   `subscription_clock::id`. If clear, treat the timestamp
 ///   provided in `subscription_clock::timeout` relative to the
 ///   current time value of clock `subscription_clock::id`.
-pub enum SubclockFlags {
+pub enum SubclockFlag {
   Subscription_clock_abstime
 } derive(Eq, Show)
 
-pub fn value(self : SubclockFlags) -> UInt {
+pub fn value(self : SubclockFlag) -> UInt {
   match self {
     Subscription_clock_abstime => 1
   }
 }
 
-pub fn set(self : SubclockFlag, flag : SubclockFlags) -> SubclockFlag {
+pub fn set(self : SubclockFlags, flag : SubclockFlag) -> SubclockFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : SubclockFlag, flag : SubclockFlags) -> SubclockFlag {
+pub fn unset(self : SubclockFlags, flag : SubclockFlag) -> SubclockFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : SubclockFlag, flag : SubclockFlags) -> Bool {
+pub fn is_set(self : SubclockFlags, flag : SubclockFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
@@ -857,7 +857,7 @@ pub struct Subscription_clock {
   id : ClockId
   timeout : TimeStamp
   precision : TimeStamp
-  flags : SubclockFlag
+  flags : SubclockFlags
 } derive(Eq, Show)
 
 /// The contents of a `subscription` when type is `eventtype::fd_read` or `eventtype::fd_write`.
@@ -1026,9 +1026,9 @@ pub fn Signal::from_value(value : Int) -> Signal? {
 }
 
 /// Flags provided to `sock_recv`.
-pub type RiFlag UInt derive(Eq, Show)
+pub type RiFlags UInt derive(Eq, Show)
 
-pub fn RiFlag::new() -> RiFlag {
+pub fn RiFlags::new() -> RiFlags {
   0
 }
 
@@ -1036,94 +1036,94 @@ pub fn RiFlag::new() -> RiFlag {
 /// 
 /// - Recv_peek: Returns the message without removing it from the socket's receive queue.
 /// - Recv_waitall: On byte-stream sockets, block until the full amount of data can be returned.
-pub enum RiFlags {
+pub enum RiFlag {
   Recv_peek
   Recv_waitall
 } derive(Eq, Show)
 
-pub fn value(self : RiFlags) -> UInt {
+pub fn value(self : RiFlag) -> UInt {
   match self {
     Recv_peek => 1
     Recv_waitall => 2
   }
 }
 
-pub fn set(self : RiFlag, flag : RiFlags) -> RiFlag {
+pub fn set(self : RiFlags, flag : RiFlag) -> RiFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : RiFlag, flag : RiFlags) -> RiFlag {
+pub fn unset(self : RiFlags, flag : RiFlag) -> RiFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : RiFlag, flag : RiFlags) -> Bool {
+pub fn is_set(self : RiFlags, flag : RiFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
 /// Flags returned by `sock_recv`.
-pub type RoFlag UInt derive(Eq, Show)
+pub type RoFlags UInt derive(Eq, Show)
 
-pub fn RoFlag::new() -> RoFlag {
+pub fn RoFlags::new() -> RoFlags {
   0
 }
 
 /// Flags returned by `sock_recv`.
 /// 
 /// - Recv_data_truncated: Returned by `sock_recv`: Message data has been truncated.
-pub enum RoFlags {
+pub enum RoFlag {
   Recv_data_truncated
 } derive(Eq, Show)
 
-pub fn value(self : RoFlags) -> UInt {
+pub fn value(self : RoFlag) -> UInt {
   match self {
     Recv_data_truncated => 1
   }
 }
 
-pub fn set(self : RoFlag, flag : RoFlags) -> RoFlag {
+pub fn set(self : RoFlags, flag : RoFlag) -> RoFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : RoFlag, flag : RoFlags) -> RoFlag {
+pub fn unset(self : RoFlags, flag : RoFlag) -> RoFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : RoFlag, flag : RoFlags) -> Bool {
+pub fn is_set(self : RoFlags, flag : RoFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
 /// Flags provided to `sock_send`. As there are currently no flags defined, it must be set to zero.
-pub type SiFlag UInt derive(Eq, Show)
+pub type SiFlags UInt derive(Eq, Show)
 
-pub fn SiFlag::new() -> SiFlag {
+pub fn SiFlags::new() -> SiFlags {
   0
 }
 
 /// Flags returned by `sock_send`. As there are currently no flags defined, it must be set to zero.
-pub enum SiFlags {} derive(Eq, Show)
+pub enum SiFlag {} derive(Eq, Show)
 
-pub fn value(self : SiFlags) -> UInt {
+pub fn value(self : SiFlag) -> UInt {
   match self {
     _ => panic()
   }
 }
 
-pub fn set(self : SiFlag, flag : SiFlags) -> SiFlag {
+pub fn set(self : SiFlags, flag : SiFlag) -> SiFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : SiFlag, flag : SiFlags) -> SiFlag {
+pub fn unset(self : SiFlags, flag : SiFlag) -> SiFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : SiFlag, flag : SiFlags) -> Bool {
+pub fn is_set(self : SiFlags, flag : SiFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 
 /// Which channels on a socket to shut down.
-pub type SdFlag UInt derive(Eq, Show)
+pub type SdFlags UInt derive(Eq, Show)
 
-pub fn SdFlag::new() -> SdFlag {
+pub fn SdFlags::new() -> SdFlags {
   0
 }
 
@@ -1131,27 +1131,27 @@ pub fn SdFlag::new() -> SdFlag {
 /// 
 /// - Rd: Disables further receive operations.
 /// - Wr: Disables further send operations.
-pub enum SdFlags {
+pub enum SdFlag {
   Rd
   Wr
 } derive(Eq, Show)
 
-pub fn value(self : SdFlags) -> UInt {
+pub fn value(self : SdFlag) -> UInt {
   match self {
     Rd => 1
     Wr => 2
   }
 }
 
-pub fn set(self : SdFlag, flag : SdFlags) -> SdFlag {
+pub fn set(self : SdFlags, flag : SdFlag) -> SdFlags {
   self._ | flag.value()
 }
 
-pub fn unset(self : SdFlag, flag : SdFlags) -> SdFlag {
+pub fn unset(self : SdFlags, flag : SdFlag) -> SdFlags {
   self._ & (flag.value() ^ 0)
 }
 
-pub fn is_set(self : SdFlag, flag : SdFlags) -> Bool {
+pub fn is_set(self : SdFlags, flag : SdFlag) -> Bool {
   (self._ & flag.value()) != 0
 }
 

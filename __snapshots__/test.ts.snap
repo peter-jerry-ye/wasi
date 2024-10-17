@@ -5,8 +5,8 @@ snapshot[`arg_get 1`] = `""`;
 snapshot[`environ_get 1`] = `""`;
 
 snapshot[`fd_fdstat_get 1`] = `
-"{fs_filetype: Unknown, fs_flags: FdFlag(0), fs_rights_base: Right(64), fs_rights_inheriting: Right(64)}
-{fs_filetype: Directory, fs_flags: FdFlag(0), fs_rights_base: Right(129498624), fs_rights_inheriting: Right(267911167)}
+"{fs_filetype: Unknown, fs_flags: FdFlags(0), fs_rights_base: Rights(64), fs_rights_inheriting: Rights(64)}
+{fs_filetype: Directory, fs_flags: FdFlags(0), fs_rights_base: Rights(129498624), fs_rights_inheriting: Rights(267911167)}
 "
 `;
 
