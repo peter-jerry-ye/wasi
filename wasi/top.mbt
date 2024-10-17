@@ -332,6 +332,33 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   buf
 }
 
+fn fd_read_ffi(fd : Int, iovs : Int, iovs_len : Int, nread : Int) -> UInt = "wasi_snapshot_preview1" "fd_read"
+
+/// Read from a file descriptor.
+/// 
+/// Note: This is similar to `readv` in POSIX.
+pub fn fd_read(self : Fd, iovs : Array[Bytes]) -> Size!Errno {
+  let iovs_len = iovs.length()
+  let iovs_ptr = @ffi.malloc(iovs_len * 8)
+  for i, byte in iovs {
+    let ptr = @ffi.bytes2ptr(byte)
+    @ffi.store32(iovs_ptr + i * 8, ptr)
+    @ffi.store32(iovs_ptr + i * 8 + 4, byte.length())
+    @ffi.free(ptr)
+  }
+  let nread_ptr = @ffi.malloc(4)
+  let ret = fd_read_ffi(self._, iovs_ptr, iovs_len, nread_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let nread = @ffi.load32(nread_ptr).reinterpret_as_uint()
+  @ffi.free(nread_ptr)
+  @ffi.free(iovs_ptr)
+  if ret != Success {
+    raise ret
+  }
+  ignore(iovs)
+  nread
+}
+
 fn fd_readdir_ffi(
   fd : Int,
   buf : Int,

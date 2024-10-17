@@ -29,7 +29,7 @@ WASI Preview 1 implementation for MoonBit
 - [ ] `fd_prestat_get`
 - [ ] `fd_prestat_dir_name`
 - [ ] `fd_pwrite`
-- [ ] `fd_read`
+- [x] `fd_read`
 - [x] `fd_readdir`
 - [ ] `fd_renumber`
 - [ ] `fd_seek`
