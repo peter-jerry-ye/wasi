@@ -41,11 +41,11 @@ WASI Preview 1 implementation for MoonBit
 - [x] `path_filestat_set_times`
 - [x] `path_link`
 - [x] `path_open`
-- [ ] `path_readlink`
-- [ ] `path_remove_directory`
-- [ ] `path_rename`
-- [ ] `path_symlink`
-- [ ] `path_unlink_file`
+- [x] `path_readlink`
+- [x] `path_remove_directory`
+- [x] `path_rename`
+- [x] `path_symlink`
+- [x] `path_unlink_file`
 - [ ] `poll_oneoff`
 - [x] `proc_exit`
 - [ ] `proc_raise`

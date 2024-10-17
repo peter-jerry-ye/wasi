@@ -590,7 +590,7 @@ fn path_link_ffi(
 /// @param `new_fd` The wroking directory at which the resolution of the new path starts.  
 /// @param `new_path` The destination path at which to create the hard link.
 pub fn path_link(
-  old_fd : Fd,
+  self : Fd,
   old_flags : LookupFlags,
   old_path : String,
   new_fd : Fd,
@@ -603,7 +603,7 @@ pub fn path_link(
   let new_path_len = new_path_bytes.length()
   let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
   let ret = path_link_ffi(
-    old_fd._,
+    self._,
     old_flags._,
     old_path_ptr,
     old_path_len,
@@ -677,7 +677,7 @@ pub fn path_open(
     fs_rights_base._,
     fs_rights_inheriting._,
     fs_flags._,
-    fd_ptr
+    fd_ptr,
   )
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(path_ptr)
@@ -687,6 +687,169 @@ pub fn path_open(
     raise ret
   }
   Fd(fd)
+}
+
+fn path_readlink_ffi(
+  fd : Int,
+  path : Int,
+  path_len : Int,
+  buf : Int,
+  buf_len : Int,
+  buf_used : Int
+) -> UInt = "wasi_snapshot_preview1" "path_readlink"
+
+/// Read the contents of a symbolic link.
+/// 
+/// Note: This is similar to `readlinkat` in POSIX. If `buf` is not large
+/// enough to store the contents of the link, the first `buf_len` bytes will be
+/// written `buf`.
+pub fn path_readlink(
+  self : Fd,
+  path : String,
+  ~buffer : Bytes = Bytes::new(4096)
+) -> Size!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let buf_len = buffer.length()
+  let buf_ptr = @ffi.bytes2ptr(buffer)
+  let buf_used_ptr = @ffi.malloc(4)
+  let ret = path_readlink_ffi(
+    self._,
+    path_ptr,
+    path_len,
+    buf_ptr,
+    buf_len,
+    buf_used_ptr,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  let buf_used = @ffi.load32(buf_used_ptr).reinterpret_as_uint()
+  @ffi.free(buf_used_ptr)
+  @ffi.free(path_ptr)
+  @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+  buf_used
+}
+
+fn path_remove_directory_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "path_remove_directory"
+
+/// Remove a directory.
+/// 
+/// Return `errno::notempty` if the directory is not empty.
+/// 
+/// Note: This is similar to `unlinkat(fd, path, AT_REMOVEDIR)` in POSIX.
+pub fn path_remove_directory(self : Fd, path : String) -> Unit!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let ret = path_remove_directory_ffi(self._, path_ptr, path_len)
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(path_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn path_rename_ffi(
+  old_fd : Int,
+  old_path : Int,
+  old_path_len : Int,
+  new_fd : Int,
+  new_path : Int,
+  new_path_len : Int
+) -> UInt = "wasi_snapshot_preview1" "path_rename"
+
+/// Rename a file or directory.
+/// 
+/// Note: This is similar to `renameat` in POSIX.
+/// 
+/// @param `old_path` The source path of the file or directory to rename.  
+/// @param `new_fd` The working directory at which the resolution of the new path starts.  
+/// @param `new_path` The destination path of the file or directory to rename.
+pub fn path_rename(
+  self : Fd,
+  old_path : String,
+  new_fd : Fd,
+  new_path : String
+) -> Unit!Errno {
+  let old_path_bytes = old_path |> encode_utf8
+  let old_path_len = old_path_bytes.length()
+  let old_path_ptr = @ffi.bytes2ptr(old_path_bytes)
+  let new_path_bytes = new_path |> encode_utf8
+  let new_path_len = new_path_bytes.length()
+  let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
+  let ret = path_rename_ffi(
+    self._,
+    old_path_ptr,
+    old_path_len,
+    new_fd._,
+    new_path_ptr,
+    new_path_len,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(old_path_ptr)
+  @ffi.free(new_path_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn path_symlink_ffi(
+  old_path : Int,
+  old_path_len : Int,
+  fd : Int,
+  new_path : Int,
+  new_path_len : Int
+) -> UInt = "wasi_snapshot_preview1" "path_symlink"
+
+/// Create a symbolic link.
+/// 
+/// Note: This is similar to `symlinkat` in POSIX.
+pub fn path_symlink(
+  old_path : String,
+  fd : Fd,
+  new_path : String
+) -> Unit!Errno {
+  let old_path_bytes = old_path |> encode_utf8
+  let old_path_len = old_path_bytes.length()
+  let old_path_ptr = @ffi.bytes2ptr(old_path_bytes)
+  let new_path_bytes = new_path |> encode_utf8
+  let new_path_len = new_path_bytes.length()
+  let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
+  let ret = path_symlink_ffi(
+    old_path_ptr,
+    old_path_len,
+    fd._,
+    new_path_ptr,
+    new_path_len,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(old_path_ptr)
+  @ffi.free(new_path_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn path_unlink_file_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "path_unlink_file"
+
+/// Unlink a file.
+/// 
+/// Return `errno::isdir` if the path refers to a directory.
+/// 
+/// Note: This is similar to `unlinkat(fd, path, 0)` in POSIX.
+pub fn path_unlink_file(self : Fd, path : String) -> Unit!Errno {
+  let path_bytes = path |> encode_utf8
+  let path_len = path_bytes.length()
+  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let ret = path_unlink_file_ffi(self._, path_ptr, path_len)
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(path_ptr)
+  if ret != Success {
+    raise ret
+  }
 }
 
 fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
