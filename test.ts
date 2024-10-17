@@ -37,6 +37,17 @@ Deno.test("fd_fdstat_get", async (t) => {
     await assertSnapshot(t, stdout);
 })
 
+Deno.test("fd_prestat_dir_name", async (t) => {
+    const output = await new Deno.Command("wasmtime", {
+        args: ['--dir', '.', '--dir', 'test', 'test/target/wasm/debug/build/fd_prestat_dir_name/fd_prestat_dir_name.wasm'],
+        stdout: 'piped',
+        stderr: 'piped',
+    }).spawn().output()
+    assertEquals(output.code, 0);
+    const stdout = textDecoder.decode(output.stdout)
+    await assertSnapshot(t, stdout);
+})
+
 Deno.test("fd_read", async (t) => {
     // Notice that wasmtime may only read into the first buffer.
     let process = new Deno.Command("wasmtime", {

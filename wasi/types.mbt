@@ -738,7 +738,7 @@ pub struct FileStat {
   atim : TimeStamp
   mtim : TimeStamp
   ctim : TimeStamp
-}
+} derive(Eq, Show)
 
 /// User-provided value that may be attached to objects that is retained when
 /// extracted from the implementation.
@@ -950,7 +950,7 @@ pub enum Signal {
   Poll
   Pwr
   Sys
-}
+} derive(Eq, Show)
 
 pub fn value(self : Signal) -> Int {
   match self {
@@ -1160,7 +1160,7 @@ pub fn is_set(self : SdFlags, flag : SdFlag) -> Bool {
 /// - Dir: A pre-opened directory.
 pub enum PreOpenType {
   Dir
-}
+} derive(Eq, Show)
 
 pub fn value(self : PreOpenType) -> UInt {
   match self {
@@ -1178,11 +1178,11 @@ pub fn PreOpenType::from_value(value : UInt) -> PreOpenType? {
 /// The content of a `prestat` when type is `preopentype::dir`.
 /// 
 /// - `pr_name_len`: The length of the directory name for use with `fd_prestat_dir_name`.
-pub struct Prestat_dir {
+pub struct PreStat_dir {
   pr_name_len : Size
-}
+} derive(Eq, Show)
 
 /// Information about a pre-opened capability.
-pub enum Prestat {
-  Dir(Prestat_dir)
-}
+pub enum PreStat {
+  Dir(PreStat_dir)
+} derive(Eq, Show)

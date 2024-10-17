@@ -26,8 +26,8 @@ WASI Preview 1 implementation for MoonBit
 - [ ] `fd_filestat_set_size`
 - [ ] `fd_filestat_set_times`
 - [ ] `fd_pread`
-- [ ] `fd_prestat_get`
-- [ ] `fd_prestat_dir_name`
+- [x] `fd_prestat_get`
+- [x] `fd_prestat_dir_name`
 - [ ] `fd_pwrite`
 - [x] `fd_read`
 - [x] `fd_readdir`

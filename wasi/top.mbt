@@ -246,6 +246,10 @@ pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
   let buf_ptr = @ffi.malloc(24)
   let ret = fd_fdstat_get_ffi(self._, buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    @ffi.free(buf_ptr)
+    raise ret
+  }
   let fs_filetype : FileType = @ffi.load8_u(buf_ptr)
     |> FileType::from_value
     |> Option::unwrap
@@ -259,9 +263,6 @@ pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
     fs_rights_inheriting,
   }
   @ffi.free(buf_ptr)
-  if ret != Success {
-    raise ret
-  }
   buf
 }
 
@@ -330,6 +331,42 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
     raise ret
   }
   buf
+}
+
+fn fd_prestat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_prestat_get"
+
+/// Return a description of the given preopened file descriptor.
+pub fn fd_prestat_get(self : Fd) -> PreStat!Errno {
+  let buf_ptr = @ffi.malloc(8)
+  let ret = fd_prestat_get_ffi(self._, buf_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    @ffi.free(buf_ptr)
+    raise ret
+  }
+  // There's no other possibility of tag...
+  guard let 0 = @ffi.load8_u(buf_ptr).reinterpret_as_uint()
+  let size : Size = @ffi.load32(buf_ptr + 4).reinterpret_as_uint()
+  let buf = PreStat::Dir(PreStat_dir::{ pr_name_len: size })
+  @ffi.free(buf_ptr)
+  buf
+}
+
+fn fd_prestat_dir_name_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "fd_prestat_dir_name"
+
+/// Return a description of the given preopened file descriptor.
+pub fn fd_prestat_dir_name(self : Fd) -> String!Errno {
+  let prestat = self.fd_prestat_get!()
+  guard let Dir({ pr_name_len: Size(size) }) = prestat
+  let buffer = Bytes::new(size.reinterpret_as_int())
+  let buf_ptr = @ffi.bytes2ptr(buffer)
+  let ret = fd_prestat_dir_name_ffi(self._, buf_ptr, size.reinterpret_as_int())
+  let ret = Errno::from_value(ret).unwrap()
+  @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+  buffer |> decode_utf8
 }
 
 fn fd_read_ffi(fd : Int, iovs : Int, iovs_len : Int, nread : Int) -> UInt = "wasi_snapshot_preview1" "fd_read"
