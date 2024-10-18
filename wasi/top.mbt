@@ -333,6 +333,48 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   buf
 }
 
+fn fd_filestat_set_size_ffi(ffi : Int, size : UInt64) -> UInt = "wasi_snapshot_preview1" "fd_filestat_set_size"
+
+/// Adjust the size of an open file. If this increases the file's size, the extra bytes are filled with zeros.
+/// 
+/// Note: This is similar to `ftruncate` in POSIX.
+/// 
+/// @param `size` The desired file size.
+pub fn fd_filestat_set_size(self : Fd, size : FileSize) -> Unit!Errno {
+  let ret = fd_filestat_set_size_ffi(self._, size._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn fd_filestat_set_times_ffi(
+  fd : Int,
+  atim : UInt64,
+  mtim : UInt64,
+  fst_flags : UInt
+) -> UInt = "wasi_snapshot_preview1" "fd_filestat_set_times"
+
+/// Adjust the timestamps of an open file or directory.
+/// 
+/// Note: This is similar to `futimens` in POSIX.
+/// 
+/// @param `atim` The desired value of the data access timestamp.  
+/// @param `mtim` The desired value of the data modification timestamp.  
+/// @param `fst_flags` A bitmask indicating which timestamps to adjust.
+pub fn fd_filestat_set_times(
+  self : Fd,
+  atim : TimeStamp,
+  mtim : TimeStamp,
+  fst_flags : FstFlags
+) -> Unit!Errno {
+  let ret = fd_filestat_set_times_ffi(self._, atim._, mtim._, fst_flags._)
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
 fn fd_pread_ffi(
   fd : Int,
   iovs : Int,

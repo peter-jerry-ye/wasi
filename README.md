@@ -5,6 +5,8 @@
 - [x] Wasm Backend
 - [ ] Wasm-GC Backend
 
+Note: not all APIs are fully tested.
+
 ## Implemented functions
 
 - [x] `args_get`
@@ -21,8 +23,8 @@
 - [x] `fd_fdstat_set_flags`
 - [x] `fd_fdstat_set_rights`
 - [x] `fd_filestat_get`
-- [ ] `fd_filestat_set_size`
-- [ ] `fd_filestat_set_times`
+- [x] `fd_filestat_set_size`
+- [x] `fd_filestat_set_times`
 - [x] `fd_pread`
 - [x] `fd_prestat_get`
 - [x] `fd_prestat_dir_name`
