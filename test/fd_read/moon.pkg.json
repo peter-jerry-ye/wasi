@@ -1,6 +1,6 @@
 {
     "import": [
-        "peter-jerry-ye/wasi/wasi"
+        "peter-jerry-ye/wasi"
     ],
     "link": {
         "wasm": {
