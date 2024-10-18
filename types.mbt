@@ -1206,3 +1206,9 @@ pub struct PreStat_dir {
 pub enum PreStat {
   Dir(PreStat_dir)
 } derive(Eq, Show)
+
+pub let stdin : Fd = 0
+
+pub let stdout : Fd = 1
+
+pub let stderr : Fd = 2
