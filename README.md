@@ -44,15 +44,15 @@
 - [x] `path_rename`
 - [x] `path_symlink`
 - [x] `path_unlink_file`
-- [ ] `poll_oneoff`
+- [x] `poll_oneoff`
 - [x] `proc_exit`
-- [ ] `proc_raise`
-- [ ] `sched_yield`
+- [x] `proc_raise`
+- [x] `sched_yield`
 - [x] `random_get`
-- [ ] `sock_accept`
-- [ ] `sock_recv`
-- [ ] `sock_send`
-- [ ] `sock_shutdown`
+- [x] `sock_accept`
+- [x] `sock_recv`
+- [x] `sock_send`
+- [x] `sock_shutdown`
 
 ## Develop
 

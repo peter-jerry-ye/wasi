@@ -21,19 +21,31 @@ pub extern "wasm" fn store16(offset : Int, value : Int) =
 pub extern "wasm" fn load16(offset : Int) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.load16_s)
 
-pub extern "wasm" fn load16_u(offset : Int) -> Int =
+pub extern "wasm" fn load16_u(offset : Int) -> UInt =
   #|(func (param i32) (result i32) local.get 0 i32.load16_u)
 
 pub extern "wasm" fn store32(offset : Int, value : Int) =
   #|(func (param i32) (param i32) local.get 0 local.get 1 i32.store)
 
+pub extern "wasm" fn store32_u(offset : Int, value : UInt) =
+  #|(func (param i32) (param i32) local.get 0 local.get 1 i32.store)
+
 pub extern "wasm" fn load32(offset : Int) -> Int =
+  #|(func (param i32) (result i32) local.get 0 i32.load)
+
+pub extern "wasm" fn load32_u(offset : Int) -> UInt =
   #|(func (param i32) (result i32) local.get 0 i32.load)
 
 pub extern "wasm" fn store64(offset : Int, value : Int64) =
   #|(func (param i32) (param i64) local.get 0 local.get 1 i64.store)
 
+pub extern "wasm" fn store64_u(offset : Int, value : UInt64) =
+  #|(func (param i32) (param i64) local.get 0 local.get 1 i64.store)
+
 pub extern "wasm" fn load64(offset : Int) -> Int64 =
+  #|(func (param i32) (result i64) local.get 0 i64.load)
+
+pub extern "wasm" fn load64_u(offset : Int) -> UInt64 =
   #|(func (param i32) (result i64) local.get 0 i64.load)
 
 pub extern "wasm" fn storef32(offset : Int, value : Float) =

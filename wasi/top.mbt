@@ -138,7 +138,7 @@ pub fn clock_res_get(self : ClockId) -> TimeStamp!Errno {
   let resolution_ptr = @ffi.malloc(8)
   let ret = clock_res_get_ffi(self.value(), resolution_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let resolution = @ffi.load64(resolution_ptr).reinterpret_as_uint64()
+  let resolution = @ffi.load64_u(resolution_ptr)
   @ffi.free(resolution_ptr)
   if ret != Success {
     raise ret
@@ -253,9 +253,9 @@ pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
   let fs_filetype : FileType = @ffi.load8_u(buf_ptr)
     |> FileType::from_value
     |> Option::unwrap
-  let fs_flags : FdFlags = @ffi.load16_u(buf_ptr + 2).reinterpret_as_uint()
-  let fs_rights_base : Rights = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
-  let fs_rights_inheriting : Rights = @ffi.load64(buf_ptr + 16).reinterpret_as_uint64()
+  let fs_flags : FdFlags = @ffi.load16_u(buf_ptr + 2)
+  let fs_rights_base : Rights = @ffi.load64_u(buf_ptr + 8)
+  let fs_rights_inheriting : Rights = @ffi.load64_u(buf_ptr + 16)
   let buf = FdStat::{
     fs_filetype,
     fs_flags,
@@ -1010,6 +1010,71 @@ pub fn path_unlink_file(self : Fd, path : String) -> Unit!Errno {
   }
 }
 
+fn poll_oneoff_ffi(
+  in_ : Int,
+  out : Int,
+  nsubscriptions : Int,
+  nevents : Int
+) -> UInt = "wasi_snapshot_preview1" "poll_oneoff"
+
+/// Concurrently poll for the occurrence of a set of events.
+/// 
+/// If `nsubscriptions` is 0, returns `errno::inval`.
+/// 
+/// @param `in_` The events to which to subscribe.  
+/// @return The events that have occurred.
+pub fn poll_oneoff(in_ : Array[Subscription]) -> Array[Event]!Errno {
+  let nsubscriptions = in_.length()
+  let in_ptr = @ffi.malloc(nsubscriptions * 48)
+  let out_ptr = @ffi.malloc(nsubscriptions * 32)
+  for i, sub in in_ {
+    @ffi.store64(in_ptr + i * 48, sub.userdata._.to_int64())
+    match sub.u {
+      Clock({ id, timeout, precision, flags }) => {
+        @ffi.store32(in_ptr + i * 48 + 8, 0)
+        @ffi.store32_u(in_ptr + i * 48 + 8 + 4 + 0, id.value())
+        @ffi.store64_u(in_ptr + i * 48 + 8 + 4 + 8, timeout._)
+        @ffi.store64_u(in_ptr + i * 48 + 8 + 4 + 16, precision._)
+        @ffi.store32_u(in_ptr + i * 48 + 8 + 4 + 24, flags._)
+      }
+      Fd_read({ file_descriptor }) => {
+        @ffi.store32(in_ptr + i * 48 + 8, 1)
+        @ffi.store32(in_ptr + i * 48 + 12, file_descriptor._)
+      }
+      Fd_write({ file_descriptor }) => {
+        @ffi.store32(in_ptr + i * 48 + 8, 2)
+        @ffi.store32(in_ptr + i * 48 + 12, file_descriptor._)
+      }
+    }
+  }
+  let nevents_ptr = @ffi.malloc(4)
+  let ret = poll_oneoff_ffi(in_ptr, out_ptr, nsubscriptions, nevents_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let nevents = @ffi.load32(nevents_ptr)
+  @ffi.free(nevents_ptr)
+  @ffi.free(in_ptr)
+  if ret != Success {
+    @ffi.free(out_ptr)
+    raise ret
+  }
+  let events = []
+  for i in 0..<nevents {
+    let userdata : Userdata = @ffi.load64_u(out_ptr + i * 32)
+    let errno : Errno = @ffi.load32_u(out_ptr + i * 32 + 8)
+      |> Errno::from_value
+      |> Option::unwrap
+    let type_ : EventType = @ffi.load16_u(out_ptr + i * 32 + 12)
+      |> EventType::from_value
+      |> Option::unwrap
+    let nbytes : FileSize = @ffi.load64_u(out_ptr + i * 32 + 16)
+    let flags : EventRWFlags = @ffi.load32_u(out_ptr + i * 32 + 24)
+    let fd_readwrite : Event_fd_readwrite = { nbytes, flags }
+    events.push(Event::{ userdata, error: errno, type_, fd_readwrite })
+  }
+  @ffi.free(out_ptr)
+  events
+}
+
 fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
 
 /// Terminate the process normally. An exit code of 0 indicates successful
@@ -1021,6 +1086,34 @@ fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
 /// making the actual error code environment-dependent.
 pub fn proc_exit(rval : UInt) -> Unit {
   proc_exit_ffi(rval)
+}
+
+fn proc_raise_ffi(sig : UInt) -> UInt = "wasi_snapshot_preview1" "proc_raise"
+
+/// Send a signal to the process of the calling thread.
+/// 
+/// Note: This is similar to `raise` in POSIX.
+/// 
+/// @param `sig` The signal condition to trigger.
+pub fn proc_raise(sig : Signal) -> Unit!Errno {
+  let ret = proc_raise_ffi(sig.value())
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn sched_yield_ffi() -> UInt = "wasi_snapshot_preview1" "sched_yield"
+
+/// Temporarily yield execution of the calling thread.
+/// 
+/// Note: This is similar to `sched_yield` in POSIX.
+pub fn sched_yield() -> Unit!Errno {
+  let ret = sched_yield_ffi()
+  let ret = Errno::from_value(ret).unwrap()
+  if ret != Success {
+    raise ret
+  }
 }
 
 fn random_get_ffi(buf : Int, buf_len : Int) -> UInt = "wasi_snapshot_preview1" "random_get"
@@ -1039,6 +1132,137 @@ pub fn random_get(buf : Bytes) -> Unit!Errno {
   let ret = random_get_ffi(buf_ptr, buf_len)
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(buf_ptr)
+  if ret != Success {
+    raise ret
+  }
+}
+
+fn sock_accept_ffi(sock : Int, flags : UInt, fd : Int) -> UInt = "wasi_snapshot_preview1" "sock_accept"
+
+/// Accept a new incoming connection on a socket.
+/// 
+/// Note: This is similar to `accept` in POSIX.
+/// 
+/// @param `self` The listening socket.  
+/// @param `flags` The desired values of the file descriptor flags.  
+/// @return New socket connection.
+pub fn sock_accept(self : Fd, flags : FdFlags) -> Fd!Errno {
+  let fd_ptr = @ffi.malloc(4)
+  let ret = sock_accept_ffi(self._, flags._, fd_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let fd = @ffi.load32(fd_ptr)
+  @ffi.free(fd_ptr)
+  if ret != Success {
+    raise ret
+  }
+  Fd(fd)
+}
+
+fn sock_recv_ffi(
+  sock : Int,
+  ri_data : Int,
+  ri_data_len : Int,
+  ri_flags : UInt,
+  size : Int,
+  ro_flags : Int
+) -> UInt = "wasi_snapshot_preview1" "sock_recv"
+
+/// Receive a message from a socket.
+/// 
+/// Note: This is similar to `recv` in POSIX, though it also supports reading
+/// the data into multiple buffers in the manner of `readv`.
+/// 
+/// @param `contents` List of scatter/gather vectors to which to store data.  
+/// @param `flags` Message flags.  
+/// @return Number of bytes stored in the buffers and message flags.
+pub fn sock_recv(
+  self : Fd,
+  contents : Array[Bytes],
+  flags : RiFlags
+) -> (Size, RoFlags)!Errno {
+  let ri_data_len = contents.length()
+  let ri_data_ptr = @ffi.malloc(ri_data_len * 8)
+  for i, byte in contents {
+    let ptr = @ffi.bytes2ptr(byte)
+    @ffi.store32(ri_data_ptr + i * 8, ptr)
+    @ffi.store32(ri_data_ptr + i * 8 + 4, byte.length())
+    @ffi.free(ptr)
+  }
+  let ro_flags_ptr = @ffi.malloc(4)
+  let size_ptr = @ffi.malloc(4)
+  let ret = sock_recv_ffi(
+    self._,
+    ri_data_ptr,
+    ri_data_len,
+    flags._,
+    size_ptr,
+    ro_flags_ptr,
+  )
+  let ret = Errno::from_value(ret).unwrap()
+  let size = @ffi.load32(size_ptr).reinterpret_as_uint()
+  let ro_flags = @ffi.load32(ro_flags_ptr).reinterpret_as_uint()
+  @ffi.free(size_ptr)
+  @ffi.free(ro_flags_ptr)
+  @ffi.free(ri_data_ptr)
+  ignore(contents)
+  if ret != Success {
+    raise ret
+  }
+  (size, ro_flags)
+}
+
+fn sock_send_ffi(
+  sock : Int,
+  si_data : Int,
+  si_data_len : Int,
+  si_flags : UInt,
+  size : Int
+) -> UInt = "wasi_snapshot_preview1" "sock_send"
+
+/// Send a message on a socket.
+/// 
+/// Note: This is similar to `send` in POSIX, though it also supports writing
+/// the data from multiple buffers in the manner of `writev`.
+/// 
+/// @param `contents` List of scatter/gather vectors to which to retrieve the data.  
+/// @param `flags` Message flags.  
+/// @return The number of bytes transmitted.
+pub fn sock_send(
+  self : Fd,
+  contents : Array[Bytes],
+  flags : SiFlags
+) -> Size!Errno {
+  let si_data_len = contents.length()
+  let si_data_ptr = @ffi.malloc(si_data_len * 8)
+  for i, byte in contents {
+    let ptr = @ffi.bytes2ptr(byte)
+    @ffi.store32(si_data_ptr + i * 8, ptr)
+    @ffi.store32(si_data_ptr + i * 8 + 4, byte.length())
+    @ffi.free(ptr)
+  }
+  let size_ptr = @ffi.malloc(4)
+  let ret = sock_send_ffi(self._, si_data_ptr, si_data_len, flags._, size_ptr)
+  let ret = Errno::from_value(ret).unwrap()
+  let size = @ffi.load32(size_ptr).reinterpret_as_uint()
+  @ffi.free(size_ptr)
+  @ffi.free(si_data_ptr)
+  ignore(contents)
+  if ret != Success {
+    raise ret
+  }
+  size
+}
+
+fn sock_shutdown_ffi(sock : Int, how : UInt) -> UInt = "wasi_snapshot_preview1" "sock_shutdown"
+
+/// Shut down socket send and receive channels.
+/// 
+/// Note: This is similar to `shutdown` in POSIX.
+/// 
+/// @param `how` Which channels on the socket to shut down.
+pub fn sock_shutdown(self : Fd, how : SdFlags) -> Unit!Errno {
+  let ret = sock_shutdown_ffi(self._, how._)
+  let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
     raise ret
   }

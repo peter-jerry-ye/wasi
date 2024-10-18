@@ -758,6 +758,23 @@ pub enum EventType {
   Fd_write
 } derive(Eq, Show)
 
+pub fn value(self : EventType) -> UInt {
+  match self {
+    Clock => 0
+    Fd_read => 1
+    Fd_write => 2
+  }
+}
+
+pub fn EventType::from_value(value : UInt) -> EventType? {
+  match value {
+    0 => Some(Clock)
+    1 => Some(Fd_read)
+    2 => Some(Fd_write)
+    _ => None
+  }
+}
+
 /// The state of the file descriptor subscribed to with `eventtype::fd_read` or `eventtype::fd_write`.
 pub type EventRWFlags UInt derive(Eq, Show)
 
@@ -955,7 +972,7 @@ pub enum Signal {
   Sys
 } derive(Eq, Show)
 
-pub fn value(self : Signal) -> Int {
+pub fn value(self : Signal) -> UInt {
   match self {
     None => 0
     Hup => 1
@@ -991,7 +1008,7 @@ pub fn value(self : Signal) -> Int {
   }
 }
 
-pub fn Signal::from_value(value : Int) -> Signal? {
+pub fn Signal::from_value(value : UInt) -> Signal? {
   match value {
     0 => Some(None)
     1 => Some(Hup)
