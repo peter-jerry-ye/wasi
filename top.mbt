@@ -159,7 +159,7 @@ pub fn clock_time_get(self : ClockId, precision : TimeStamp) -> TimeStamp!Errno 
   let time_ptr = @ffi.malloc(8)
   let ret = clock_time_get_ffi(self.value(), precision._, time_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let time = @ffi.load64(time_ptr).reinterpret_as_uint64()
+  let time = @ffi.load64_u(time_ptr)
   @ffi.free(time_ptr)
   if ret != Success {
     raise ret
@@ -315,16 +315,16 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   let buf_ptr = @ffi.malloc(24)
   let ret = fd_filestat_get_ffi(self._, buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let dev : Device = @ffi.load64(buf_ptr).reinterpret_as_uint64()
-  let ino : Inode = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
+  let dev : Device = @ffi.load64_u(buf_ptr)
+  let ino : Inode = @ffi.load64_u(buf_ptr + 8)
   let filetype : FileType = @ffi.load8_u(buf_ptr + 16)
     |> FileType::from_value
     |> Option::unwrap
-  let nlink : LinkCount = @ffi.load64(buf_ptr + 24).reinterpret_as_uint64()
-  let size : FileSize = @ffi.load64(buf_ptr + 32).reinterpret_as_uint64()
-  let atim : TimeStamp = @ffi.load64(buf_ptr + 40).reinterpret_as_uint64()
-  let mtim : TimeStamp = @ffi.load64(buf_ptr + 48).reinterpret_as_uint64()
-  let ctim : TimeStamp = @ffi.load64(buf_ptr + 56).reinterpret_as_uint64()
+  let nlink : LinkCount = @ffi.load64_u(buf_ptr + 24)
+  let size : FileSize = @ffi.load64_u(buf_ptr + 32)
+  let atim : TimeStamp = @ffi.load64_u(buf_ptr + 40)
+  let mtim : TimeStamp = @ffi.load64_u(buf_ptr + 48)
+  let ctim : TimeStamp = @ffi.load64_u(buf_ptr + 56)
   let buf = FileStat::{ dev, ino, filetype, nlink, size, atim, mtim, ctim }
   @ffi.free(buf_ptr)
   if ret != Success {
@@ -402,7 +402,7 @@ pub fn fd_pread(
   let nread_ptr = @ffi.malloc(4)
   let ret = fd_pread_ffi(self._, iovs_ptr, iovs_len, offset._, nread_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let nread = @ffi.load32(nread_ptr).reinterpret_as_uint()
+  let nread = @ffi.load32_u(nread_ptr)
   @ffi.free(nread_ptr)
   @ffi.free(iovs_ptr)
   if ret != Success {
@@ -426,8 +426,8 @@ pub fn fd_prestat_get(self : Fd) -> PreStat!Errno {
     raise ret
   }
   // There's no other possibility of tag...
-  guard let 0 = @ffi.load8_u(buf_ptr).reinterpret_as_uint()
-  let size : Size = @ffi.load32(buf_ptr + 4).reinterpret_as_uint()
+  guard let 0 = @ffi.load8_u(buf_ptr)
+  let size : Size = @ffi.load32_u(buf_ptr + 4)
   let buf = PreStat::Dir(PreStat_dir::{ pr_name_len: size })
   @ffi.free(buf_ptr)
   buf
@@ -467,7 +467,7 @@ pub fn fd_read(self : Fd, iovs : Array[Bytes]) -> Size!Errno {
   let nread_ptr = @ffi.malloc(4)
   let ret = fd_read_ffi(self._, iovs_ptr, iovs_len, nread_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let nread = @ffi.load32(nread_ptr).reinterpret_as_uint()
+  let nread = @ffi.load32_u(nread_ptr)
   @ffi.free(nread_ptr)
   @ffi.free(iovs_ptr)
   if ret != Success {
@@ -524,14 +524,14 @@ pub fn fd_readdir(
       // truncated
       break (entries, true)
     }
-    let d_next : DirCookie = @ffi.load64(buf_ptr + i).reinterpret_as_uint64()
-    let d_ino : Inode = @ffi.load64(buf_ptr + i + 8).reinterpret_as_uint64()
+    let d_next : DirCookie = @ffi.load64_u(buf_ptr + i)
+    let d_ino : Inode = @ffi.load64_u(buf_ptr + i + 8)
     let namlen = @ffi.load32(buf_ptr + i + 16)
     let d_namlen : DirNamlen = namlen.reinterpret_as_uint()
     let d_type : FileType = @ffi.load8_u(buf_ptr + i + 20)
       |> FileType::from_value
       |> Option::unwrap
-    if i + 24 + d_namlen._.reinterpret_as_int() > buf_used {
+    if i + 24 + namlen > buf_used {
       // truncated
       break (entries, true)
     }
@@ -588,7 +588,7 @@ pub fn fd_seek(
   let newoffset_ptr = @ffi.malloc(8)
   let ret = fd_seek_ffi(self._, offset._, whence.value(), newoffset_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let newoffset = @ffi.load64(newoffset_ptr).reinterpret_as_uint64()
+  let newoffset = @ffi.load64_u(newoffset_ptr)
   @ffi.free(newoffset_ptr)
   if ret != Success {
     raise ret
@@ -620,7 +620,7 @@ pub fn fd_tell(self : Fd) -> FileSize!Errno {
   let newoffset_ptr = @ffi.malloc(8)
   let ret = fd_tell_ffi(self._, newoffset_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let newoffset = @ffi.load64(newoffset_ptr).reinterpret_as_uint64()
+  let newoffset = @ffi.load64_u(newoffset_ptr)
   @ffi.free(newoffset_ptr)
   if ret != Success {
     raise ret
@@ -651,7 +651,7 @@ pub fn fd_write(self : Fd, contents : Array[Bytes]) -> Size!Errno {
   let nwritten_ptr = @ffi.malloc(4)
   let ret = fd_write_ffi(self._, iovs_ptr, iovs_len, nwritten_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let nwritten = @ffi.load32(nwritten_ptr).reinterpret_as_uint()
+  let nwritten = @ffi.load32_u(nwritten_ptr)
   @ffi.free(nwritten_ptr)
   @ffi.free(iovs_ptr)
   ignore(contents)
@@ -710,16 +710,16 @@ pub fn path_filestat_get(
     @ffi.free(buf_ptr)
     raise ret
   }
-  let dev : Device = @ffi.load64(buf_ptr).reinterpret_as_uint64()
-  let ino : Inode = @ffi.load64(buf_ptr + 8).reinterpret_as_uint64()
+  let dev : Device = @ffi.load64_u(buf_ptr)
+  let ino : Inode = @ffi.load64_u(buf_ptr + 8)
   let filetype : FileType = @ffi.load8_u(buf_ptr + 16)
     |> FileType::from_value
     |> Option::unwrap
-  let nlink : LinkCount = @ffi.load64(buf_ptr + 24).reinterpret_as_uint64()
-  let size : FileSize = @ffi.load64(buf_ptr + 32).reinterpret_as_uint64()
-  let atim : TimeStamp = @ffi.load64(buf_ptr + 40).reinterpret_as_uint64()
-  let mtim : TimeStamp = @ffi.load64(buf_ptr + 48).reinterpret_as_uint64()
-  let ctim : TimeStamp = @ffi.load64(buf_ptr + 56).reinterpret_as_uint64()
+  let nlink : LinkCount = @ffi.load64_u(buf_ptr + 24)
+  let size : FileSize = @ffi.load64_u(buf_ptr + 32)
+  let atim : TimeStamp = @ffi.load64_u(buf_ptr + 40)
+  let mtim : TimeStamp = @ffi.load64_u(buf_ptr + 48)
+  let ctim : TimeStamp = @ffi.load64_u(buf_ptr + 56)
   let buf = FileStat::{ dev, ino, filetype, nlink, size, atim, mtim, ctim }
   @ffi.free(buf_ptr)
   buf
@@ -923,7 +923,7 @@ pub fn path_readlink(
     buf_used_ptr,
   )
   let ret = Errno::from_value(ret).unwrap()
-  let buf_used = @ffi.load32(buf_used_ptr).reinterpret_as_uint()
+  let buf_used = @ffi.load32_u(buf_used_ptr)
   @ffi.free(buf_used_ptr)
   @ffi.free(path_ptr)
   @ffi.free(buf_ptr)
@@ -1070,7 +1070,7 @@ pub fn poll_oneoff(in_ : Array[Subscription]) -> Array[Event]!Errno {
   let in_ptr = @ffi.malloc(nsubscriptions * 48)
   let out_ptr = @ffi.malloc(nsubscriptions * 32)
   for i, sub in in_ {
-    @ffi.store64(in_ptr + i * 48, sub.userdata._.to_int64())
+    @ffi.store64_u(in_ptr + i * 48, sub.userdata._)
     match sub.u {
       Clock({ id, timeout, precision, flags }) => {
         @ffi.store32(in_ptr + i * 48 + 8, 0)
@@ -1241,8 +1241,8 @@ pub fn sock_recv(
     ro_flags_ptr,
   )
   let ret = Errno::from_value(ret).unwrap()
-  let size = @ffi.load32(size_ptr).reinterpret_as_uint()
-  let ro_flags = @ffi.load32(ro_flags_ptr).reinterpret_as_uint()
+  let size = @ffi.load32_u(size_ptr)
+  let ro_flags = @ffi.load32_u(ro_flags_ptr)
   @ffi.free(size_ptr)
   @ffi.free(ro_flags_ptr)
   @ffi.free(ri_data_ptr)
@@ -1285,7 +1285,7 @@ pub fn sock_send(
   let size_ptr = @ffi.malloc(4)
   let ret = sock_send_ffi(self._, si_data_ptr, si_data_len, flags._, size_ptr)
   let ret = Errno::from_value(ret).unwrap()
-  let size = @ffi.load32(size_ptr).reinterpret_as_uint()
+  let size = @ffi.load32_u(size_ptr)
   @ffi.free(size_ptr)
   @ffi.free(si_data_ptr)
   ignore(contents)
