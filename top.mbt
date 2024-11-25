@@ -36,8 +36,8 @@ pub fn args_get() -> Array[String]!Errno {
     return []
   }
   let arg_ptr_ptr = @ffi.malloc(argc * 4)
-  let arg_buf = Bytes::new(size)
-  let arg_buf_ptr = @ffi.bytes2ptr(arg_buf)
+  let arg_buf = FixedArray::make(size, b'\x00')
+  let arg_buf_ptr = @ffi.byte_array2ptr(arg_buf)
   let ret = args_get_ffi(arg_ptr_ptr, arg_buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
@@ -54,8 +54,8 @@ pub fn args_get() -> Array[String]!Errno {
       @ffi.load32(arg_ptr_ptr + (i + 1) * 4) - arg_buf_ptr
     }
     let len = arg_end - arg_start - 1 // remove trailing zero
-    let bytes = Bytes::new(len)
-    bytes.blit(0, arg_buf, arg_start, len)
+    let bytes = FixedArray::make(len, b'\x00')
+    arg_buf.blit_to(bytes, len~, src_offset=arg_start)
     args.push(bytes |> decode_utf8)
   }
   @ffi.free(arg_ptr_ptr)
@@ -94,8 +94,8 @@ pub fn environ_get() -> Array[(String, String)]!Errno {
     return []
   }
   let environ_ptr_ptr = @ffi.malloc(argc * 4)
-  let environ_buf = Bytes::new(size)
-  let environ_buf_ptr = @ffi.bytes2ptr(environ_buf)
+  let environ_buf = FixedArray::make(size, b'\x00')
+  let environ_buf_ptr = @ffi.byte_array2ptr(environ_buf)
   let ret = environ_get_ffi(environ_ptr_ptr, environ_buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
@@ -112,8 +112,8 @@ pub fn environ_get() -> Array[(String, String)]!Errno {
       @ffi.load32(environ_ptr_ptr + (i + 1) * 4) - environ_buf_ptr
     }
     let len = env_end - env_start - 1 // remove trailing zero
-    let bytes = Bytes::new(len)
-    bytes.blit(0, environ_buf, env_start, len)
+    let bytes = FixedArray::make(len, b'\x00')
+    environ_buf.blit_to(bytes, len~, src_offset=env_start)
     let str = bytes |> decode_utf8
     guard let [key, .. as value] = str.split("=").collect()
     envs.push((key, value.iter().collect() |> String::concat(separator="=")))
@@ -388,13 +388,13 @@ fn fd_pread_ffi(
 /// Note: This is similar to `preadv` in Linux (and other Unix-es).
 pub fn fd_pread(
   self : Fd,
-  iovs : Array[Bytes],
+  iovs : Array[FixedArray[Byte]],
   offset : FileSize
 ) -> Size!Errno {
   let iovs_len = iovs.length()
   let iovs_ptr = @ffi.malloc(iovs_len * 8)
   for i, byte in iovs {
-    let ptr = @ffi.bytes2ptr(byte)
+    let ptr = @ffi.byte_array2ptr(byte)
     @ffi.store32(iovs_ptr + i * 8, ptr)
     @ffi.store32(iovs_ptr + i * 8 + 4, byte.length())
     @ffi.free(ptr)
@@ -439,8 +439,8 @@ fn fd_prestat_dir_name_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi
 pub fn fd_prestat_dir_name(self : Fd) -> String!Errno {
   let prestat = self.fd_prestat_get!()
   guard let Dir({ pr_name_len: Size(size) }) = prestat
-  let buffer = Bytes::new(size.reinterpret_as_int())
-  let buf_ptr = @ffi.bytes2ptr(buffer)
+  let buffer = FixedArray::make(size.reinterpret_as_int(), b'\x00')
+  let buf_ptr = @ffi.byte_array2ptr(buffer)
   let ret = fd_prestat_dir_name_ffi(self._, buf_ptr, size.reinterpret_as_int())
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(buf_ptr)
@@ -455,11 +455,11 @@ fn fd_read_ffi(fd : Int, iovs : Int, iovs_len : Int, nread : Int) -> UInt = "was
 /// Read from a file descriptor.
 /// 
 /// Note: This is similar to `readv` in POSIX.
-pub fn fd_read(self : Fd, iovs : Array[Bytes]) -> Size!Errno {
+pub fn fd_read(self : Fd, iovs : Array[FixedArray[Byte]]) -> Size!Errno {
   let iovs_len = iovs.length()
   let iovs_ptr = @ffi.malloc(iovs_len * 8)
   for i, byte in iovs {
-    let ptr = @ffi.bytes2ptr(byte)
+    let ptr = @ffi.byte_array2ptr(byte)
     @ffi.store32(iovs_ptr + i * 8, ptr)
     @ffi.store32(iovs_ptr + i * 8 + 4, byte.length())
     @ffi.free(ptr)
@@ -504,11 +504,11 @@ fn fd_readdir_ffi(
 /// @return The entries untruncated and whether there's still other entries.
 pub fn fd_readdir(
   self : Fd,
-  ~cookie : DirCookie = DirCookie(0),
-  ~buffer : Bytes = Bytes::new(4096)
+  cookie~ : DirCookie = DirCookie(0),
+  buffer~ : FixedArray[Byte] = FixedArray::make(4096, 0)
 ) -> (Array[(String, DirEnt)], Bool)!Errno {
   let buf_len = buffer.length()
-  let buf_ptr = @ffi.bytes2ptr(buffer)
+  let buf_ptr = @ffi.byte_array2ptr(buffer)
   let buf_used_ptr = @ffi.malloc(4)
   let ret = fd_readdir_ffi(self._, buf_ptr, buf_len, cookie._, buf_used_ptr)
   let ret = Errno::from_value(ret).unwrap()
@@ -535,8 +535,8 @@ pub fn fd_readdir(
       // truncated
       break (entries, true)
     }
-    let string = Bytes::new(namlen)
-    string.blit(0, buffer, i + 24, namlen)
+    let string = FixedArray::make(namlen, b'\x00')
+    buffer.blit_to(string, len=namlen, src_offset=i + 24)
     entries.push(
       (string |> decode_utf8, DirEnt::{ d_next, d_ino, d_namlen, d_type }),
     )
@@ -639,11 +639,11 @@ fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = 
 /// interleaved while `write` is executed.
 /// 
 /// Note: it may write less than demanded.
-pub fn fd_write(self : Fd, contents : Array[Bytes]) -> Size!Errno {
+pub fn fd_write(self : Fd, contents : Array[FixedArray[Byte]]) -> Size!Errno {
   let iovs_len = contents.length()
   let iovs_ptr = @ffi.malloc(iovs_len * 8)
   for i, byte in contents {
-    let ptr = @ffi.bytes2ptr(byte)
+    let ptr = @ffi.byte_array2ptr(byte)
     @ffi.store32(iovs_ptr + i * 8, ptr)
     @ffi.store32(iovs_ptr + i * 8 + 4, byte.length())
     @ffi.free(ptr)
@@ -671,7 +671,7 @@ fn path_create_directory_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wa
 pub fn path_create_directory(self : Fd, path : String) -> Unit!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let ret = path_create_directory_ffi(self._, path_ptr, path_len)
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(path_ptr)
@@ -701,7 +701,7 @@ pub fn path_filestat_get(
 ) -> FileStat!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let buf_ptr = @ffi.malloc(24)
   let ret = path_filestat_get_ffi(self._, flags._, path_ptr, path_len, buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
@@ -754,7 +754,7 @@ pub fn path_filestat_set_times(
 ) -> Unit!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let ret = path_filestat_set_times_ffi(
     self._,
     flags._,
@@ -798,10 +798,10 @@ pub fn path_link(
 ) -> Unit!Errno {
   let old_path_bytes = old_path |> encode_utf8
   let old_path_len = old_path_bytes.length()
-  let old_path_ptr = @ffi.bytes2ptr(old_path_bytes)
+  let old_path_ptr = @ffi.byte_array2ptr(old_path_bytes)
   let new_path_bytes = new_path |> encode_utf8
   let new_path_len = new_path_bytes.length()
-  let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
+  let new_path_ptr = @ffi.byte_array2ptr(new_path_bytes)
   let ret = path_link_ffi(
     self._,
     old_flags._,
@@ -866,7 +866,7 @@ pub fn path_open(
 ) -> Fd!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let fd_ptr = @ffi.malloc(4)
   let ret = path_open_ffi(
     self._,
@@ -906,13 +906,13 @@ fn path_readlink_ffi(
 pub fn path_readlink(
   self : Fd,
   path : String,
-  ~buffer : Bytes = Bytes::new(4096)
+  buffer~ : FixedArray[Byte] = FixedArray::make(4096, 0)
 ) -> Size!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let buf_len = buffer.length()
-  let buf_ptr = @ffi.bytes2ptr(buffer)
+  let buf_ptr = @ffi.byte_array2ptr(buffer)
   let buf_used_ptr = @ffi.malloc(4)
   let ret = path_readlink_ffi(
     self._,
@@ -943,7 +943,7 @@ fn path_remove_directory_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wa
 pub fn path_remove_directory(self : Fd, path : String) -> Unit!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let ret = path_remove_directory_ffi(self._, path_ptr, path_len)
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(path_ptr)
@@ -976,10 +976,10 @@ pub fn path_rename(
 ) -> Unit!Errno {
   let old_path_bytes = old_path |> encode_utf8
   let old_path_len = old_path_bytes.length()
-  let old_path_ptr = @ffi.bytes2ptr(old_path_bytes)
+  let old_path_ptr = @ffi.byte_array2ptr(old_path_bytes)
   let new_path_bytes = new_path |> encode_utf8
   let new_path_len = new_path_bytes.length()
-  let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
+  let new_path_ptr = @ffi.byte_array2ptr(new_path_bytes)
   let ret = path_rename_ffi(
     self._,
     old_path_ptr,
@@ -1014,10 +1014,10 @@ pub fn path_symlink(
 ) -> Unit!Errno {
   let old_path_bytes = old_path |> encode_utf8
   let old_path_len = old_path_bytes.length()
-  let old_path_ptr = @ffi.bytes2ptr(old_path_bytes)
+  let old_path_ptr = @ffi.byte_array2ptr(old_path_bytes)
   let new_path_bytes = new_path |> encode_utf8
   let new_path_len = new_path_bytes.length()
-  let new_path_ptr = @ffi.bytes2ptr(new_path_bytes)
+  let new_path_ptr = @ffi.byte_array2ptr(new_path_bytes)
   let ret = path_symlink_ffi(
     old_path_ptr,
     old_path_len,
@@ -1043,7 +1043,7 @@ fn path_unlink_file_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_sn
 pub fn path_unlink_file(self : Fd, path : String) -> Unit!Errno {
   let path_bytes = path |> encode_utf8
   let path_len = path_bytes.length()
-  let path_ptr = @ffi.bytes2ptr(path_bytes)
+  let path_ptr = @ffi.byte_array2ptr(path_bytes)
   let ret = path_unlink_file_ffi(self._, path_ptr, path_len)
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(path_ptr)
@@ -1168,9 +1168,9 @@ fn random_get_ffi(buf : Int, buf_len : Int) -> UInt = "wasi_snapshot_preview1" "
 /// This function may execute slowly, so when larget mounts of random data are
 /// required, it's advisable to use this function to seed a pseudo-random
 /// number generator, rather than to provide the random data directly.
-pub fn random_get(buf : Bytes) -> Unit!Errno {
+pub fn random_get(buf : FixedArray[Byte]) -> Unit!Errno {
   let buf_len = buf.length()
-  let buf_ptr = @ffi.bytes2ptr(buf)
+  let buf_ptr = @ffi.byte_array2ptr(buf)
   let ret = random_get_ffi(buf_ptr, buf_len)
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(buf_ptr)
@@ -1219,13 +1219,13 @@ fn sock_recv_ffi(
 /// @return Number of bytes stored in the buffers and message flags.
 pub fn sock_recv(
   self : Fd,
-  contents : Array[Bytes],
+  contents : Array[FixedArray[Byte]],
   flags : RiFlags
 ) -> (Size, RoFlags)!Errno {
   let ri_data_len = contents.length()
   let ri_data_ptr = @ffi.malloc(ri_data_len * 8)
   for i, byte in contents {
-    let ptr = @ffi.bytes2ptr(byte)
+    let ptr = @ffi.byte_array2ptr(byte)
     @ffi.store32(ri_data_ptr + i * 8, ptr)
     @ffi.store32(ri_data_ptr + i * 8 + 4, byte.length())
     @ffi.free(ptr)
@@ -1271,13 +1271,13 @@ fn sock_send_ffi(
 /// @return The number of bytes transmitted.
 pub fn sock_send(
   self : Fd,
-  contents : Array[Bytes],
+  contents : Array[FixedArray[Byte]],
   flags : SiFlags
 ) -> Size!Errno {
   let si_data_len = contents.length()
   let si_data_ptr = @ffi.malloc(si_data_len * 8)
   for i, byte in contents {
-    let ptr = @ffi.bytes2ptr(byte)
+    let ptr = @ffi.byte_array2ptr(byte)
     @ffi.store32(si_data_ptr + i * 8, ptr)
     @ffi.store32(si_data_ptr + i * 8 + 4, byte.length())
     @ffi.free(ptr)

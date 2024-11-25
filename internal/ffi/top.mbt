@@ -73,7 +73,7 @@ pub fn malloc(size : Int) -> Int {
   let words = size / 4 + 1
   let address = malloc_inline(8 + words * 4)
   store32(address, 1)
-  store32(address + 4, (words << 8) | 246)
+  store32(address + 4, (words << 8) | 241)
   store8(address + words * 4 + 7, 3 - size % 4)
   address + 8
 }
@@ -99,10 +99,10 @@ pub extern "wasm" fn str2ptr(str : String) -> Int =
 pub extern "wasm" fn ptr2str(ptr : Int) -> String =
   #|(func (param i32) (result i32) local.get 0 i32.const 4 i32.sub i32.const 243 i32.store8 local.get 0 i32.const 8 i32.sub)
 
-pub extern "wasm" fn bytes2ptr(bytes : Bytes) -> Int =
+pub extern "wasm" fn byte_array2ptr(bytes : FixedArray[Byte]) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)
 
-pub extern "wasm" fn ptr2bytes(ptr : Int) -> Bytes =
+pub extern "wasm" fn ptr2byte_array(ptr : Int) -> FixedArray[Byte] =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.sub)
 
 pub extern "wasm" fn uint_array2ptr(array : FixedArray[UInt]) -> Int =
@@ -162,9 +162,9 @@ fn set_64_header_ffi(offset : Int) -> Unit {
   store8(offset, 241)
 }
 
-pub trait Any {}
+pub(open) trait Any {}
 
-pub struct Cleanup {
+pub(all) struct Cleanup {
   address : Int
   size : Int
   align : Int
