@@ -36,7 +36,7 @@ pub fn decode_utf8(bytes : FixedArray[Byte]) -> String {
       break // let it go ~
     }
   }
-  buffer.to_unchecked_string()
+  buffer.contents().to_unchecked_string()
 }
 
 /// Encode a string into a UTF-8 byte array
