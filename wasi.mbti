@@ -1,0 +1,680 @@
+package peter-jerry-ye/wasi
+
+// Values
+fn args_get() -> Array[String]!Errno
+
+fn args_sizes_get() -> (Int, Int)!Errno
+
+fn decode_utf8(FixedArray[Byte]) -> String
+
+fn encode_utf8(String) -> FixedArray[Byte]
+
+fn environ_get() -> Array[(String, String)]!Errno
+
+fn environ_sizes_get() -> (Int, Int)!Errno
+
+fn path_symlink(String, Fd, String) -> Unit!Errno
+
+fn poll_oneoff(Array[Subscription]) -> Array[Event]!Errno
+
+fn proc_exit(UInt) -> Unit
+
+fn proc_raise(Signal) -> Unit!Errno
+
+fn random_get(FixedArray[Byte]) -> Unit!Errno
+
+fn sched_yield() -> Unit!Errno
+
+let stderr : Fd
+
+let stdin : Fd
+
+let stdout : Fd
+
+// Types and methods
+pub(all) enum Advice {
+  Normal
+  Sequential
+  Random
+  Willneed
+  Dontneed
+  Noreuse
+}
+impl Advice {
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for Advice
+impl Show for Advice
+
+pub(all) struct CIOVec {
+  buf : Int
+  buf_len : Size
+}
+impl Eq for CIOVec
+impl Show for CIOVec
+
+pub(all) enum ClockId {
+  RealTime
+  Monotonic
+  ProcessCPUTimeId
+  ThreadCPUTimeId
+}
+impl ClockId {
+  clock_res_get(Self) -> TimeStamp!Errno
+  clock_time_get(Self, TimeStamp) -> TimeStamp!Errno
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for ClockId
+impl Show for ClockId
+
+pub(all) type Device UInt64
+impl Eq for Device
+impl Show for Device
+
+pub(all) type DirCookie UInt64
+impl Eq for DirCookie
+impl Show for DirCookie
+
+pub(all) struct DirEnt {
+  d_next : DirCookie
+  d_ino : Inode
+  d_namlen : DirNamlen
+  d_type : FileType
+}
+impl Eq for DirEnt
+impl Show for DirEnt
+
+pub(all) type DirNamlen UInt
+impl Eq for DirNamlen
+impl Show for DirNamlen
+
+pub(all) type! Errno {
+  Success
+  TooBig
+  Acces
+  Addrinuse
+  Addrnotavail
+  Afnosupport
+  Again
+  Already
+  Badf
+  Badmsg
+  Busy
+  Canceled
+  Child
+  Connaborted
+  Connrefused
+  Connreset
+  Deadlock
+  Destaddrreq
+  Dom
+  Dquot
+  Exist
+  Fault
+  Fbig
+  Hostunreach
+  Idrm
+  Ilseq
+  Inprogress
+  Intr
+  Inval
+  IO
+  Isconn
+  Isdir
+  Loop
+  Mfile
+  Mlink
+  Msgsize
+  Multihop
+  Nametoolong
+  Netdown
+  Netreset
+  Netunreach
+  Nfile
+  Nobufs
+  Nodev
+  Noent
+  Noexec
+  Nolck
+  Nolink
+  Nomem
+  Nomsg
+  Noprotoopt
+  Nospc
+  Nosys
+  Notconn
+  Notdir
+  Notempty
+  Notrecoverable
+  Notsock
+  Notsup
+  Notty
+  Nxio
+  Overflow
+  Ownerdead
+  Perm
+  Pipe
+  Proto
+  Protonosupport
+  Prototype
+  Range
+  Rofs
+  Spipe
+  Srch
+  Stale
+  Timedout
+  Txtbsy
+  Xdev
+  Notcapable
+}
+impl Errno {
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for Errno
+impl Show for Errno
+
+pub(all) struct Event {
+  userdata : Userdata
+  error : Errno
+  type_ : EventType
+  fd_readwrite : Event_fd_readwrite
+}
+impl Eq for Event
+impl Show for Event
+
+pub(all) enum EventRWFlag {
+  Fd_readwrite_hangup
+}
+impl EventRWFlag {
+  value(Self) -> UInt
+}
+impl Eq for EventRWFlag
+impl Show for EventRWFlag
+
+pub(all) type EventRWFlags UInt
+impl EventRWFlags {
+  is_set(Self, EventRWFlag) -> Bool
+  new() -> Self
+  set(Self, EventRWFlag) -> Self
+  unset(Self, EventRWFlag) -> Self
+}
+impl Eq for EventRWFlags
+impl Show for EventRWFlags
+
+pub(all) enum EventType {
+  Clock
+  Fd_read
+  Fd_write
+}
+impl EventType {
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for EventType
+impl Show for EventType
+
+pub(all) struct Event_fd_readwrite {
+  nbytes : FileSize
+  flags : EventRWFlags
+}
+impl Eq for Event_fd_readwrite
+impl Show for Event_fd_readwrite
+
+pub(all) type ExitCode UInt
+impl Eq for ExitCode
+impl Show for ExitCode
+
+pub(all) type Fd Int
+impl Fd {
+  fd_advise(Self, FileSize, FileSize, Advice) -> Unit!Errno
+  fd_allocate(Self, FileSize, FileSize) -> Unit!Errno
+  fd_close(Self) -> Unit!Errno
+  fd_datasync(Self) -> Unit!Errno
+  fd_fdstat_get(Self) -> FdStat!Errno
+  fd_fdstat_set_flags(Self, FdFlags) -> Unit!Errno
+  fd_fdstat_set_rights(Self, Rights, Rights) -> Unit!Errno
+  fd_filestat_get(Self) -> FileStat!Errno
+  fd_filestat_set_size(Self, FileSize) -> Unit!Errno
+  fd_filestat_set_times(Self, TimeStamp, TimeStamp, FstFlags) -> Unit!Errno
+  fd_pread(Self, Array[FixedArray[Byte]], FileSize) -> Size!Errno
+  fd_prestat_dir_name(Self) -> String!Errno
+  fd_prestat_get(Self) -> PreStat!Errno
+  fd_read(Self, Array[FixedArray[Byte]]) -> Size!Errno
+  fd_readdir(Self, cookie~ : DirCookie = .., buffer~ : FixedArray[Byte] = ..) -> (Array[(String, DirEnt)], Bool)!Errno
+  fd_renumber(Self, Self) -> Unit!Errno
+  fd_seek(Self, FileDelta, Whence) -> FileSize!Errno
+  fd_sync(Self) -> Unit!Errno
+  fd_tell(Self) -> FileSize!Errno
+  fd_write(Self, Array[FixedArray[Byte]]) -> Size!Errno
+  path_create_directory(Self, String) -> Unit!Errno
+  path_filestat_get(Self, LookupFlags, String) -> FileStat!Errno
+  path_filestat_set_times(Self, LookupFlags, String, TimeStamp, TimeStamp, FstFlags) -> Unit!Errno
+  path_link(Self, LookupFlags, String, Self, String) -> Unit!Errno
+  path_open(Self, LookupFlags, String, OpenFlags, Rights, Rights, FdFlags) -> Self!Errno
+  path_readlink(Self, String, buffer~ : FixedArray[Byte] = ..) -> Size!Errno
+  path_remove_directory(Self, String) -> Unit!Errno
+  path_rename(Self, String, Self, String) -> Unit!Errno
+  path_unlink_file(Self, String) -> Unit!Errno
+  sock_accept(Self, FdFlags) -> Self!Errno
+  sock_recv(Self, Array[FixedArray[Byte]], RiFlags) -> (Size, RoFlags)!Errno
+  sock_send(Self, Array[FixedArray[Byte]], SiFlags) -> Size!Errno
+  sock_shutdown(Self, SdFlags) -> Unit!Errno
+}
+impl Eq for Fd
+impl Show for Fd
+
+pub(all) enum FdFlag {
+  Append
+  Dsync
+  Nonblock
+  Rsync
+  Sync
+}
+impl FdFlag {
+  value(Self) -> UInt
+}
+impl Eq for FdFlag
+impl Show for FdFlag
+
+pub(all) type FdFlags UInt
+impl FdFlags {
+  is_set(Self, FdFlag) -> Bool
+  new() -> Self
+  set(Self, FdFlag) -> Self
+  unset(Self, FdFlag) -> Self
+}
+impl Eq for FdFlags
+impl Show for FdFlags
+
+pub(all) struct FdStat {
+  fs_filetype : FileType
+  fs_flags : FdFlags
+  fs_rights_base : Rights
+  fs_rights_inheriting : Rights
+}
+impl Eq for FdStat
+impl Show for FdStat
+
+pub(all) type FileDelta Int64
+impl Eq for FileDelta
+impl Show for FileDelta
+
+pub(all) type FileSize UInt64
+impl Eq for FileSize
+impl Show for FileSize
+
+pub(all) struct FileStat {
+  dev : Device
+  ino : Inode
+  filetype : FileType
+  nlink : LinkCount
+  size : FileSize
+  atim : TimeStamp
+  mtim : TimeStamp
+  ctim : TimeStamp
+}
+impl Eq for FileStat
+impl Show for FileStat
+
+pub(all) enum FileType {
+  Unknown
+  Block_device
+  Character_device
+  Directory
+  Regular_file
+  Socket_dgram
+  Socket_stream
+  Symbolic_link
+}
+impl FileType {
+  from_value(Int) -> Self?
+  value(Self) -> Int
+}
+impl Eq for FileType
+impl Show for FileType
+
+pub(all) enum FstFlag {
+  Atim
+  Atim_now
+  Mtim
+  Mtim_now
+}
+impl FstFlag {
+  value(Self) -> UInt
+}
+impl Eq for FstFlag
+impl Show for FstFlag
+
+pub(all) type FstFlags UInt
+impl FstFlags {
+  is_set(Self, FstFlag) -> Bool
+  new() -> Self
+  set(Self, FstFlag) -> Self
+  unset(Self, FstFlag) -> Self
+}
+impl Eq for FstFlags
+impl Show for FstFlags
+
+pub(all) struct IOVec {
+  buf : Int
+  buf_len : Size
+}
+impl Eq for IOVec
+impl Show for IOVec
+
+pub(all) type Inode UInt64
+impl Eq for Inode
+impl Show for Inode
+
+pub(all) type LinkCount UInt64
+impl Eq for LinkCount
+impl Show for LinkCount
+
+pub(all) enum LookupFlag {
+  Symlink_follow
+}
+impl LookupFlag {
+  value(Self) -> UInt
+}
+impl Eq for LookupFlag
+impl Show for LookupFlag
+
+pub(all) type LookupFlags UInt
+impl LookupFlags {
+  is_set(Self, LookupFlag) -> Bool
+  new() -> Self
+  set(Self, LookupFlag) -> Self
+  unset(Self, LookupFlag) -> Self
+}
+impl Eq for LookupFlags
+impl Show for LookupFlags
+
+pub(all) enum OpenFlag {
+  Create
+  Directory
+  Excl
+  Trunc
+}
+impl OpenFlag {
+  value(Self) -> UInt
+}
+impl Eq for OpenFlag
+impl Show for OpenFlag
+
+pub(all) type OpenFlags UInt
+impl OpenFlags {
+  is_set(Self, OpenFlag) -> Bool
+  new() -> Self
+  set(Self, OpenFlag) -> Self
+  unset(Self, OpenFlag) -> Self
+}
+impl Eq for OpenFlags
+impl Show for OpenFlags
+
+pub(all) enum PreOpenType {
+  Dir
+}
+impl PreOpenType {
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for PreOpenType
+impl Show for PreOpenType
+
+pub(all) enum PreStat {
+  Dir(PreStat_dir)
+}
+impl Eq for PreStat
+impl Show for PreStat
+
+pub(all) struct PreStat_dir {
+  pr_name_len : Size
+}
+impl Eq for PreStat_dir
+impl Show for PreStat_dir
+
+pub(all) enum RiFlag {
+  Recv_peek
+  Recv_waitall
+}
+impl RiFlag {
+  value(Self) -> UInt
+}
+impl Eq for RiFlag
+impl Show for RiFlag
+
+pub(all) type RiFlags UInt
+impl RiFlags {
+  is_set(Self, RiFlag) -> Bool
+  new() -> Self
+  set(Self, RiFlag) -> Self
+  unset(Self, RiFlag) -> Self
+}
+impl Eq for RiFlags
+impl Show for RiFlags
+
+pub(all) enum Right {
+  Fd_datasync
+  Fd_read
+  Fd_seek
+  Fd_fdstat_set_flags
+  Fd_sync
+  Fd_tell
+  Fd_write
+  Fd_advice
+  Fd_allocate
+  Path_create_directory
+  Path_create_file
+  Path_link_source
+  Path_link_target
+  Path_open
+  Fd_readdir
+  Path_readlink
+  Path_rename_source
+  Path_rename_target
+  Path_filestat_get
+  Path_filestat_set_size
+  Path_filestat_set_times
+  Fd_filestat_get
+  Fd_filestat_set_size
+  Fd_filestat_set_times
+  Path_symlink
+  Path_remove_directory
+  Path_unlink_file
+  Poll_fd_readwrite
+  Sock_shutdown
+  Sock_accept
+}
+impl Right {
+  value(Self) -> UInt64
+}
+impl Eq for Right
+impl Show for Right
+
+pub(all) type Rights UInt64
+impl Rights {
+  is_set(Self, Right) -> Bool
+  new() -> Self
+  set(Self, Right) -> Self
+  unset(Self, Right) -> Self
+}
+impl Eq for Rights
+impl Show for Rights
+
+pub(all) enum RoFlag {
+  Recv_data_truncated
+}
+impl RoFlag {
+  value(Self) -> UInt
+}
+impl Eq for RoFlag
+impl Show for RoFlag
+
+pub(all) type RoFlags UInt
+impl RoFlags {
+  is_set(Self, RoFlag) -> Bool
+  new() -> Self
+  set(Self, RoFlag) -> Self
+  unset(Self, RoFlag) -> Self
+}
+impl Eq for RoFlags
+impl Show for RoFlags
+
+pub(all) enum SdFlag {
+  Rd
+  Wr
+}
+impl SdFlag {
+  value(Self) -> UInt
+}
+impl Eq for SdFlag
+impl Show for SdFlag
+
+pub(all) type SdFlags UInt
+impl SdFlags {
+  is_set(Self, SdFlag) -> Bool
+  new() -> Self
+  set(Self, SdFlag) -> Self
+  unset(Self, SdFlag) -> Self
+}
+impl Eq for SdFlags
+impl Show for SdFlags
+
+pub(all) enum SiFlag {
+}
+impl SiFlag {
+  value(Self) -> UInt
+}
+impl Eq for SiFlag
+impl Show for SiFlag
+
+pub(all) type SiFlags UInt
+impl SiFlags {
+  is_set(Self, SiFlag) -> Bool
+  new() -> Self
+  set(Self, SiFlag) -> Self
+  unset(Self, SiFlag) -> Self
+}
+impl Eq for SiFlags
+impl Show for SiFlags
+
+pub(all) enum Signal {
+  None
+  Hup
+  Inte
+  Quit
+  Ill
+  Trap
+  Abrt
+  Bus
+  Fpe
+  Kill
+  Usr1
+  Segv
+  Usr2
+  Pipe
+  Alrm
+  Term
+  Chld
+  Cont
+  Stop
+  Tstp
+  Ttin
+  Ttou
+  Urg
+  Xcpu
+  Xfsz
+  Vtalrm
+  Prof
+  Winch
+  Poll
+  Pwr
+  Sys
+}
+impl Signal {
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for Signal
+impl Show for Signal
+
+pub(all) type Size UInt
+impl Eq for Size
+impl Show for Size
+
+pub(all) enum SubclockFlag {
+  Subscription_clock_abstime
+}
+impl SubclockFlag {
+  value(Self) -> UInt
+}
+impl Eq for SubclockFlag
+impl Show for SubclockFlag
+
+pub(all) type SubclockFlags UInt
+impl SubclockFlags {
+  is_set(Self, SubclockFlag) -> Bool
+  new() -> Self
+  set(Self, SubclockFlag) -> Self
+  unset(Self, SubclockFlag) -> Self
+}
+impl Eq for SubclockFlags
+impl Show for SubclockFlags
+
+pub(all) struct Subscription {
+  userdata : Userdata
+  u : Subscription_u
+}
+impl Eq for Subscription
+impl Show for Subscription
+
+pub(all) struct Subscription_clock {
+  id : ClockId
+  timeout : TimeStamp
+  precision : TimeStamp
+  flags : SubclockFlags
+}
+impl Eq for Subscription_clock
+impl Show for Subscription_clock
+
+pub(all) struct Subscription_fd_readwrite {
+  file_descriptor : Fd
+}
+impl Eq for Subscription_fd_readwrite
+impl Show for Subscription_fd_readwrite
+
+pub(all) enum Subscription_u {
+  Clock(Subscription_clock)
+  Fd_read(Subscription_fd_readwrite)
+  Fd_write(Subscription_fd_readwrite)
+}
+impl Eq for Subscription_u
+impl Show for Subscription_u
+
+pub(all) type TimeStamp UInt64
+impl Eq for TimeStamp
+impl Show for TimeStamp
+
+pub(all) type Userdata UInt64
+impl Eq for Userdata
+impl Show for Userdata
+
+pub(all) enum Whence {
+  Set
+  Cur
+  End
+}
+impl Whence {
+  from_value(UInt) -> Self?
+  value(Self) -> UInt
+}
+impl Eq for Whence
+impl Show for Whence
+
+// Type aliases
+
+// Traits
+
