@@ -1,6 +1,7 @@
+///|
 fn args_sizes_get_ffi(argc : Int, size : Int) -> UInt = "wasi_snapshot_preview1" "args_sizes_get"
 
-/// Return command-line argument data sizes.
+///| Return command-line argument data sizes.
 /// 
 /// @return Returns the number of arguments and the size of the argument string data, or an error.
 pub fn args_sizes_get() -> (Int, Int)!Errno {
@@ -18,9 +19,10 @@ pub fn args_sizes_get() -> (Int, Int)!Errno {
   (argc, size)
 }
 
+///|
 fn args_get_ffi(argv : Int, argv_buf : Int) -> UInt = "wasi_snapshot_preview1" "args_get"
 
-/// Read command-line argument data.
+///| Read command-line argument data.
 ///
 /// The size of the array should match that returned by `args_sizes_get`.
 ///
@@ -63,9 +65,10 @@ pub fn args_get() -> Array[String]!Errno {
   args
 }
 
+///|
 fn environ_sizes_get_ffi(argc : Int, size : Int) -> UInt = "wasi_snapshot_preview1" "environ_sizes_get"
 
-/// Return environment variable data sizes.
+///| Return environment variable data sizes.
 /// 
 /// @return Returns the number of environment variables arguments and the size of the environment variable data.
 pub fn environ_sizes_get() -> (Int, Int)!Errno {
@@ -83,9 +86,10 @@ pub fn environ_sizes_get() -> (Int, Int)!Errno {
   (argc, size)
 }
 
+///|
 fn environ_get_ffi(environ : Int, environ_buf : Int) -> UInt = "wasi_snapshot_preview1" "environ_get"
 
-/// Read environment variable data.
+///| Read environment variable data.
 /// 
 /// The size of the array should match that returned by `environ_sizes_get`.
 pub fn environ_get() -> Array[(String, String)]!Errno {
@@ -115,17 +119,18 @@ pub fn environ_get() -> Array[(String, String)]!Errno {
     let bytes = FixedArray::make(len, b'\x00')
     environ_buf.blit_to(bytes, len~, src_offset=env_start)
     let str = bytes |> decode_utf8
-    guard let [key, .. as value] = str.split("=").collect()
-    envs.push((key, value.iter().collect() |> String::concat(separator="=")))
+    guard str.split("=").collect() is [key, .. value]
+    envs.push((key, value.iter().collect() |> @string.concat(separator="=")))
   }
   @ffi.free(environ_ptr_ptr)
   @ffi.free(environ_buf_ptr)
   envs
 }
 
+///|
 fn clock_res_get_ffi(clock_id : UInt, resolution : Int) -> UInt = "wasi_snapshot_preview1" "clock_res_get"
 
-/// Return the resolution of a clock.
+///| Return the resolution of a clock.
 /// 
 /// Implementations are required to provide a non-zero value for supported clocks.
 /// For unsupported clocks, return `errno::inval`.
@@ -146,9 +151,10 @@ pub fn clock_res_get(self : ClockId) -> TimeStamp!Errno {
   resolution
 }
 
+///|
 fn clock_time_get_ffi(clock_id : UInt, precision : UInt64, time : Int) -> UInt = "wasi_snapshot_preview1" "clock_time_get"
 
-/// Return the time value of a clock
+///| Return the time value of a clock
 /// 
 /// Note: This is similar to `clock_gettime` in POSIX.
 /// 
@@ -167,6 +173,7 @@ pub fn clock_time_get(self : ClockId, precision : TimeStamp) -> TimeStamp!Errno 
   time
 }
 
+///|
 fn fd_advise_ffi(
   fd : Int,
   offset : UInt64,
@@ -174,7 +181,7 @@ fn fd_advise_ffi(
   advice : UInt
 ) -> UInt = "wasi_snapshot_preview1" "fd_advise"
 
-/// Provide file advisory information on a file ddescriptor
+///| Provide file advisory information on a file ddescriptor
 /// 
 /// Note: This is similar to `posix_fadvise` in POSIX.
 /// 
@@ -194,9 +201,10 @@ pub fn fd_advise(
   }
 }
 
+///|
 fn fd_allocate_ffi(fd : Int, offset : UInt64, len : UInt64) -> UInt = "wasi_snapshot_preview1" "fd_allocate"
 
-/// Force the allocaiton of space in a file.
+///| Force the allocaiton of space in a file.
 /// 
 /// Note: This is similar to `posix_fallocate` in POSIX.
 /// 
@@ -211,9 +219,10 @@ pub fn fd_allocate(self : Fd, offset : FileSize, len : FileSize) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_close_ffi(fd : Int) -> UInt = "wasi_snapshot_preview1" "fd_close"
 
-/// Close a file descriptor.
+///| Close a file descriptor.
 /// 
 /// Note: This is similar to `close` in POSIX.
 pub fn fd_close(self : Fd) -> Unit!Errno {
@@ -224,9 +233,10 @@ pub fn fd_close(self : Fd) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_datasync_ffi(fd : Int) -> UInt = "wasi_snapshot_preview1" "fd_datasync"
 
-/// Synchronize the data of a file to disk.
+///| Synchronize the data of a file to disk.
 /// 
 /// Note: This is similar to `fdatasync` in POSIX.
 pub fn fd_datasync(self : Fd) -> Unit!Errno {
@@ -237,9 +247,10 @@ pub fn fd_datasync(self : Fd) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_fdstat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_fdstat_get"
 
-/// Get the attributes of a file descriptor.
+///| Get the attributes of a file descriptor.
 /// 
 /// Note: This returns similar flags to `fcntl(fd, F_GETFL)` in POSIX, as well as additional fields.
 pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
@@ -266,9 +277,10 @@ pub fn fd_fdstat_get(self : Fd) -> FdStat!Errno {
   buf
 }
 
+///|
 fn fd_fdstat_set_flags_ffi(fd : Int, flags : UInt) -> UInt = "wasi_snapshot_preview1" "fd_fdstat_set_flags"
 
-/// Adjust the flags associated with a file descriptor.
+///| Adjust the flags associated with a file descriptor.
 /// 
 /// Note: This is similar to `fcntl(fd, F_SETFL, flags)` in POSIX.
 /// 
@@ -281,13 +293,14 @@ pub fn fd_fdstat_set_flags(self : Fd, flags : FdFlags) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_fdstat_set_rights_ffi(
   fd : Int,
   fs_rights_base : UInt64,
   fs_rights_inheriting : UInt64
 ) -> UInt = "wasi_snapshot_preview1" "fd_fdstat_set_rights"
 
-/// Adjust the rights associated with a file descriptor.
+///| Adjust the rights associated with a file descriptor.
 /// 
 /// This can only be used to remove rights, and returns `errno::notcapable` if called in a way that would attempt to add rights.
 /// 
@@ -308,9 +321,10 @@ pub fn fd_fdstat_set_rights(
   }
 }
 
+///|
 fn fd_filestat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_filestat_get"
 
-/// Return the attributes of an open file
+///| Return the attributes of an open file
 pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   let buf_ptr = @ffi.malloc(24)
   let ret = fd_filestat_get_ffi(self._, buf_ptr)
@@ -333,9 +347,10 @@ pub fn fd_filestat_get(self : Fd) -> FileStat!Errno {
   buf
 }
 
+///|
 fn fd_filestat_set_size_ffi(ffi : Int, size : UInt64) -> UInt = "wasi_snapshot_preview1" "fd_filestat_set_size"
 
-/// Adjust the size of an open file. If this increases the file's size, the extra bytes are filled with zeros.
+///| Adjust the size of an open file. If this increases the file's size, the extra bytes are filled with zeros.
 /// 
 /// Note: This is similar to `ftruncate` in POSIX.
 /// 
@@ -348,6 +363,7 @@ pub fn fd_filestat_set_size(self : Fd, size : FileSize) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_filestat_set_times_ffi(
   fd : Int,
   atim : UInt64,
@@ -355,7 +371,7 @@ fn fd_filestat_set_times_ffi(
   fst_flags : UInt
 ) -> UInt = "wasi_snapshot_preview1" "fd_filestat_set_times"
 
-/// Adjust the timestamps of an open file or directory.
+///| Adjust the timestamps of an open file or directory.
 /// 
 /// Note: This is similar to `futimens` in POSIX.
 /// 
@@ -375,6 +391,7 @@ pub fn fd_filestat_set_times(
   }
 }
 
+///|
 fn fd_pread_ffi(
   fd : Int,
   iovs : Int,
@@ -383,7 +400,7 @@ fn fd_pread_ffi(
   nread : Int
 ) -> UInt = "wasi_snapshot_preview1" "fd_pread"
 
-/// Read from a file descriptor, without using and updating the file descriptor's offset.
+///| Read from a file descriptor, without using and updating the file descriptor's offset.
 /// 
 /// Note: This is similar to `preadv` in Linux (and other Unix-es).
 pub fn fd_pread(
@@ -412,9 +429,10 @@ pub fn fd_pread(
   nread
 }
 
+///|
 fn fd_prestat_get_ffi(fd : Int, buf : Int) -> UInt = "wasi_snapshot_preview1" "fd_prestat_get"
 
-/// Return a description of the given preopened file descriptor.
+///| Return a description of the given preopened file descriptor.
 /// 
 /// Note: consider using `fd_prestat_dir_name` directly.
 pub fn fd_prestat_get(self : Fd) -> PreStat!Errno {
@@ -426,19 +444,20 @@ pub fn fd_prestat_get(self : Fd) -> PreStat!Errno {
     raise ret
   }
   // There's no other possibility of tag...
-  guard let 0 = @ffi.load8_u(buf_ptr)
+  guard @ffi.load8_u(buf_ptr) is 0
   let size : Size = @ffi.load32_u(buf_ptr + 4)
   let buf = PreStat::Dir(PreStat_dir::{ pr_name_len: size })
   @ffi.free(buf_ptr)
   buf
 }
 
+///|
 fn fd_prestat_dir_name_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "fd_prestat_dir_name"
 
-/// Return a description of the given preopened file descriptor.
+///| Return a description of the given preopened file descriptor.
 pub fn fd_prestat_dir_name(self : Fd) -> String!Errno {
   let prestat = self.fd_prestat_get!()
-  guard let Dir({ pr_name_len: Size(size) }) = prestat
+  guard prestat is Dir({ pr_name_len: Size(size) })
   let buffer = FixedArray::make(size.reinterpret_as_int(), b'\x00')
   let buf_ptr = @ffi.byte_array2ptr(buffer)
   let ret = fd_prestat_dir_name_ffi(self._, buf_ptr, size.reinterpret_as_int())
@@ -450,9 +469,10 @@ pub fn fd_prestat_dir_name(self : Fd) -> String!Errno {
   buffer |> decode_utf8
 }
 
+///|
 fn fd_read_ffi(fd : Int, iovs : Int, iovs_len : Int, nread : Int) -> UInt = "wasi_snapshot_preview1" "fd_read"
 
-/// Read from a file descriptor.
+///| Read from a file descriptor.
 /// 
 /// Note: This is similar to `readv` in POSIX.
 pub fn fd_read(self : Fd, iovs : Array[FixedArray[Byte]]) -> Size!Errno {
@@ -477,6 +497,7 @@ pub fn fd_read(self : Fd, iovs : Array[FixedArray[Byte]]) -> Size!Errno {
   nread
 }
 
+///|
 fn fd_readdir_ffi(
   fd : Int,
   buf : Int,
@@ -485,7 +506,7 @@ fn fd_readdir_ffi(
   buf_used : Int
 ) -> UInt = "wasi_snapshot_preview1" "fd_readdir"
 
-/// Read directory entries from a directory.
+///| Read directory entries from a directory.
 /// When successful, the contents of the output buffer consist of a sequence of
 /// directory entries. Each directory entry consists of a `dirent` object,
 /// followed by `dirent::d_namlen` bytes holding the name of the directory
@@ -546,9 +567,10 @@ pub fn fd_readdir(
   }
 }
 
+///|
 fn fd_renumber_ffi(fd : Int, to : Int) -> UInt = "wasi_snapshot_preview1" "fd_renumber"
 
-/// Atomically replace a file descriptor by renumbering another file descriptor.
+///| Atomically replace a file descriptor by renumbering another file descriptor.
 ///
 /// Due to the strong focus on thread safety, this environment does not provide
 /// a mechanism to duplicate or renumber a file descriptor to an arbitrary
@@ -566,6 +588,7 @@ pub fn fd_renumber(self : Fd, to : Fd) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_seek_ffi(
   fd : Int,
   offset : Int64,
@@ -573,7 +596,7 @@ fn fd_seek_ffi(
   newoffset : Int
 ) -> UInt = "wasi_snapshot_preview1" "fd_seek"
 
-/// Move the offset of a file descriptor.
+///| Move the offset of a file descriptor.
 /// 
 /// Note: This is similar to `lseek` in POSIX.
 /// 
@@ -596,9 +619,10 @@ pub fn fd_seek(
   newoffset
 }
 
+///|
 fn fd_sync_ffi(fd : Int) -> UInt = "wasi_snapshot_preview1" "fd_sync"
 
-/// Synchronize the data and metadata of a file to disk.
+///| Synchronize the data and metadata of a file to disk.
 /// 
 /// Note: This is similar to `fsync` in POSIX.
 pub fn fd_sync(self : Fd) -> Unit!Errno {
@@ -609,9 +633,10 @@ pub fn fd_sync(self : Fd) -> Unit!Errno {
   }
 }
 
+///|
 fn fd_tell_ffi(fd : Int, newoffset : Int) -> UInt = "wasi_snapshot_preview1" "fd_tell"
 
-/// Return the current offset of a file descriptor.
+///| Return the current offset of a file descriptor.
 /// 
 /// Note: This is similar to `lseek(fd, 0, SEEK_CUR)` in POSIX.
 /// 
@@ -628,9 +653,10 @@ pub fn fd_tell(self : Fd) -> FileSize!Errno {
   newoffset
 }
 
+///|
 fn fd_write_ffi(fd : Int, iovs : Int, iovs_len : Int, nwritten : Int) -> UInt = "wasi_snapshot_preview1" "fd_write"
 
-/// Write to a file descriptor.
+///| Write to a file descriptor.
 /// 
 /// Note: This is similar to `writev` in POSIX.
 /// 
@@ -661,9 +687,10 @@ pub fn fd_write(self : Fd, contents : Array[FixedArray[Byte]]) -> Size!Errno {
   nwritten
 }
 
+///|
 fn path_create_directory_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "path_create_directory"
 
-/// Create a directory.
+///| Create a directory.
 /// 
 /// Note: This is similar to `mkdirat` in POSIX.
 /// 
@@ -680,6 +707,7 @@ pub fn path_create_directory(self : Fd, path : String) -> Unit!Errno {
   }
 }
 
+///|
 fn path_filestat_get_ffi(
   fd : Int,
   flags : UInt,
@@ -688,7 +716,7 @@ fn path_filestat_get_ffi(
   buf : Int
 ) -> UInt = "wasi_snapshot_preview1" "path_filestat_get"
 
-/// Return the attributes of a file or directory.
+///| Return the attributes of a file or directory.
 /// 
 /// Note: This is similar to `stat` in POSIX.
 /// 
@@ -725,6 +753,7 @@ pub fn path_filestat_get(
   buf
 }
 
+///|
 fn path_filestat_set_times_ffi(
   fd : Int,
   flags : UInt,
@@ -735,7 +764,7 @@ fn path_filestat_set_times_ffi(
   fst_flags : UInt
 ) -> UInt = "wasi_snapshot_preview1" "path_filestat_set_times"
 
-/// Adjust the timestamps of a file or directory.
+///| Adjust the timestamps of a file or directory.
 /// 
 /// Note: This is similar to `utimensat` in POSIX.
 /// 
@@ -771,6 +800,7 @@ pub fn path_filestat_set_times(
   }
 }
 
+///|
 fn path_link_ffi(
   old_fd : Int,
   old_flags : UInt,
@@ -781,7 +811,7 @@ fn path_link_ffi(
   new_path_len : Int
 ) -> UInt = "wasi_snapshot_preview1" "path_link"
 
-/// Create a hard link.
+///| Create a hard link.
 /// 
 /// Note: This is similar to `linkat` in POSIX.
 /// 
@@ -819,6 +849,7 @@ pub fn path_link(
   }
 }
 
+///|
 fn path_open_ffi(
   dirfd : Int,
   dirflags : UInt,
@@ -831,7 +862,7 @@ fn path_open_ffi(
   fd : Int
 ) -> UInt = "wasi_snapshot_preview1" "path_open"
 
-/// Open a file or directory.
+///| Open a file or directory.
 /// 
 /// The returned file descriptor is not guaranteed to be the lowest-numbered
 /// file descriptor not currently open; it is randomized to prevent
@@ -889,6 +920,7 @@ pub fn path_open(
   Fd(fd)
 }
 
+///|
 fn path_readlink_ffi(
   fd : Int,
   path : Int,
@@ -898,7 +930,7 @@ fn path_readlink_ffi(
   buf_used : Int
 ) -> UInt = "wasi_snapshot_preview1" "path_readlink"
 
-/// Read the contents of a symbolic link.
+///| Read the contents of a symbolic link.
 /// 
 /// Note: This is similar to `readlinkat` in POSIX. If `buf` is not large
 /// enough to store the contents of the link, the first `buf_len` bytes will be
@@ -933,9 +965,10 @@ pub fn path_readlink(
   buf_used
 }
 
+///|
 fn path_remove_directory_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "path_remove_directory"
 
-/// Remove a directory.
+///| Remove a directory.
 /// 
 /// Return `errno::notempty` if the directory is not empty.
 /// 
@@ -952,6 +985,7 @@ pub fn path_remove_directory(self : Fd, path : String) -> Unit!Errno {
   }
 }
 
+///|
 fn path_rename_ffi(
   old_fd : Int,
   old_path : Int,
@@ -961,7 +995,7 @@ fn path_rename_ffi(
   new_path_len : Int
 ) -> UInt = "wasi_snapshot_preview1" "path_rename"
 
-/// Rename a file or directory.
+///| Rename a file or directory.
 /// 
 /// Note: This is similar to `renameat` in POSIX.
 /// 
@@ -996,6 +1030,7 @@ pub fn path_rename(
   }
 }
 
+///|
 fn path_symlink_ffi(
   old_path : Int,
   old_path_len : Int,
@@ -1004,7 +1039,7 @@ fn path_symlink_ffi(
   new_path_len : Int
 ) -> UInt = "wasi_snapshot_preview1" "path_symlink"
 
-/// Create a symbolic link.
+///| Create a symbolic link.
 /// 
 /// Note: This is similar to `symlinkat` in POSIX.
 pub fn path_symlink(
@@ -1033,9 +1068,10 @@ pub fn path_symlink(
   }
 }
 
+///|
 fn path_unlink_file_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi_snapshot_preview1" "path_unlink_file"
 
-/// Unlink a file.
+///| Unlink a file.
 /// 
 /// Return `errno::isdir` if the path refers to a directory.
 /// 
@@ -1052,6 +1088,7 @@ pub fn path_unlink_file(self : Fd, path : String) -> Unit!Errno {
   }
 }
 
+///|
 fn poll_oneoff_ffi(
   in_ : Int,
   out : Int,
@@ -1059,7 +1096,7 @@ fn poll_oneoff_ffi(
   nevents : Int
 ) -> UInt = "wasi_snapshot_preview1" "poll_oneoff"
 
-/// Concurrently poll for the occurrence of a set of events.
+///| Concurrently poll for the occurrence of a set of events.
 /// 
 /// If `nsubscriptions` is 0, returns `errno::inval`.
 /// 
@@ -1117,9 +1154,10 @@ pub fn poll_oneoff(in_ : Array[Subscription]) -> Array[Event]!Errno {
   events
 }
 
+///|
 fn proc_exit_ffi(rval : UInt) = "wasi_snapshot_preview1" "proc_exit"
 
-/// Terminate the process normally. An exit code of 0 indicates successful
+///| Terminate the process normally. An exit code of 0 indicates successful
 /// termination of the program. The meanings of other values is dependent on
 /// the environment.
 /// 
@@ -1130,9 +1168,10 @@ pub fn proc_exit(rval : UInt) -> Unit {
   proc_exit_ffi(rval)
 }
 
+///|
 fn proc_raise_ffi(sig : UInt) -> UInt = "wasi_snapshot_preview1" "proc_raise"
 
-/// Send a signal to the process of the calling thread.
+///| Send a signal to the process of the calling thread.
 /// 
 /// Note: This is similar to `raise` in POSIX.
 /// 
@@ -1145,9 +1184,10 @@ pub fn proc_raise(sig : Signal) -> Unit!Errno {
   }
 }
 
+///|
 fn sched_yield_ffi() -> UInt = "wasi_snapshot_preview1" "sched_yield"
 
-/// Temporarily yield execution of the calling thread.
+///| Temporarily yield execution of the calling thread.
 /// 
 /// Note: This is similar to `sched_yield` in POSIX.
 pub fn sched_yield() -> Unit!Errno {
@@ -1158,9 +1198,10 @@ pub fn sched_yield() -> Unit!Errno {
   }
 }
 
+///|
 fn random_get_ffi(buf : Int, buf_len : Int) -> UInt = "wasi_snapshot_preview1" "random_get"
 
-/// Write high-quality random data into a buffer.
+///| Write high-quality random data into a buffer.
 /// 
 /// This function blocks when the implementaiton is unable to immediately
 /// provide sufficient high-quality random data.
@@ -1179,9 +1220,10 @@ pub fn random_get(buf : FixedArray[Byte]) -> Unit!Errno {
   }
 }
 
+///|
 fn sock_accept_ffi(sock : Int, flags : UInt, fd : Int) -> UInt = "wasi_snapshot_preview1" "sock_accept"
 
-/// Accept a new incoming connection on a socket.
+///| Accept a new incoming connection on a socket.
 /// 
 /// Note: This is similar to `accept` in POSIX.
 /// 
@@ -1200,6 +1242,7 @@ pub fn sock_accept(self : Fd, flags : FdFlags) -> Fd!Errno {
   Fd(fd)
 }
 
+///|
 fn sock_recv_ffi(
   sock : Int,
   ri_data : Int,
@@ -1209,7 +1252,7 @@ fn sock_recv_ffi(
   ro_flags : Int
 ) -> UInt = "wasi_snapshot_preview1" "sock_recv"
 
-/// Receive a message from a socket.
+///| Receive a message from a socket.
 /// 
 /// Note: This is similar to `recv` in POSIX, though it also supports reading
 /// the data into multiple buffers in the manner of `readv`.
@@ -1253,6 +1296,7 @@ pub fn sock_recv(
   (size, ro_flags)
 }
 
+///|
 fn sock_send_ffi(
   sock : Int,
   si_data : Int,
@@ -1261,7 +1305,7 @@ fn sock_send_ffi(
   size : Int
 ) -> UInt = "wasi_snapshot_preview1" "sock_send"
 
-/// Send a message on a socket.
+///| Send a message on a socket.
 /// 
 /// Note: This is similar to `send` in POSIX, though it also supports writing
 /// the data from multiple buffers in the manner of `writev`.
@@ -1295,9 +1339,10 @@ pub fn sock_send(
   size
 }
 
+///|
 fn sock_shutdown_ffi(sock : Int, how : UInt) -> UInt = "wasi_snapshot_preview1" "sock_shutdown"
 
-/// Shut down socket send and receive channels.
+///| Shut down socket send and receive channels.
 /// 
 /// Note: This is similar to `shutdown` in POSIX.
 /// 
