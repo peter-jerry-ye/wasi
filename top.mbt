@@ -120,7 +120,9 @@ pub fn environ_get() -> Array[(String, String)]!Errno {
     environ_buf.blit_to(bytes, len~, src_offset=env_start)
     let str = bytes |> decode_utf8
     guard str.split("=").collect() is [key, .. value]
-    envs.push((key, value.iter().collect() |> @string.concat(separator="=")))
+    envs.push(
+      (key.to_string(), value.iter().map(@string.View::to_string).join("=")),
+    )
   }
   @ffi.free(environ_ptr_ptr)
   @ffi.free(environ_buf_ptr)
