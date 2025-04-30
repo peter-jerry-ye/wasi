@@ -1,5 +1,5 @@
 /// Decode a UTF-8 byte array into a string
-pub fn decode_utf8(bytes : FixedArray[Byte]) -> String {
+pub fn decode_utf8(bytes : @bytes.View) -> String {
   let buffer = @buffer.new(size_hint=bytes.length() * 4)
   for i = 0; i < bytes.length(); {
     let byte = bytes[i].to_int()

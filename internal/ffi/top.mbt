@@ -123,3 +123,6 @@ pub extern "wasm" fn float_array2ptr(array : FixedArray[Float]) -> Int =
 ///|
 pub extern "wasm" fn double_array2ptr(array : FixedArray[Double]) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)
+
+pub extern "wasm" fn bytes2ptr(bytes : Bytes) -> Int =
+  #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)

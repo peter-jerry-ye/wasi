@@ -38,8 +38,8 @@ pub fn args_get() -> Array[String]!Errno {
     return []
   }
   let arg_ptr_ptr = @ffi.malloc(argc * 4)
-  let arg_buf = FixedArray::make(size, b'\x00')
-  let arg_buf_ptr = @ffi.byte_array2ptr(arg_buf)
+  let arg_buf = Bytes::make(size, b'\x00')
+  let arg_buf_ptr = @ffi.bytes2ptr(arg_buf)
   let ret = args_get_ffi(arg_ptr_ptr, arg_buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
@@ -56,9 +56,7 @@ pub fn args_get() -> Array[String]!Errno {
       @ffi.load32(arg_ptr_ptr + (i + 1) * 4) - arg_buf_ptr
     }
     let len = arg_end - arg_start - 1 // remove trailing zero
-    let bytes = FixedArray::make(len, b'\x00')
-    arg_buf.blit_to(bytes, len~, src_offset=arg_start)
-    args.push(bytes |> decode_utf8)
+    args.push(arg_buf[arg_start:arg_start + len] |> decode_utf8)
   }
   @ffi.free(arg_ptr_ptr)
   @ffi.free(arg_buf_ptr)
@@ -98,8 +96,8 @@ pub fn environ_get() -> Array[(String, String)]!Errno {
     return []
   }
   let environ_ptr_ptr = @ffi.malloc(argc * 4)
-  let environ_buf = FixedArray::make(size, b'\x00')
-  let environ_buf_ptr = @ffi.byte_array2ptr(environ_buf)
+  let environ_buf = Bytes::make(size, b'\x00')
+  let environ_buf_ptr = @ffi.bytes2ptr(environ_buf)
   let ret = environ_get_ffi(environ_ptr_ptr, environ_buf_ptr)
   let ret = Errno::from_value(ret).unwrap()
   if ret != Success {
@@ -116,9 +114,7 @@ pub fn environ_get() -> Array[(String, String)]!Errno {
       @ffi.load32(environ_ptr_ptr + (i + 1) * 4) - environ_buf_ptr
     }
     let len = env_end - env_start - 1 // remove trailing zero
-    let bytes = FixedArray::make(len, b'\x00')
-    environ_buf.blit_to(bytes, len~, src_offset=env_start)
-    let str = bytes |> decode_utf8
+    let str = environ_buf[env_start:env_start + len] |> decode_utf8
     guard str.split("=").collect() is [key, .. value]
     envs.push(
       (key.to_string(), value.iter().map(@string.View::to_string).join("=")),
@@ -460,8 +456,8 @@ fn fd_prestat_dir_name_ffi(fd : Int, path : Int, path_len : Int) -> UInt = "wasi
 pub fn fd_prestat_dir_name(self : Fd) -> String!Errno {
   let prestat = self.fd_prestat_get!()
   guard prestat is Dir({ pr_name_len: Size(size) })
-  let buffer = FixedArray::make(size.reinterpret_as_int(), b'\x00')
-  let buf_ptr = @ffi.byte_array2ptr(buffer)
+  let buffer = Bytes::make(size.reinterpret_as_int(), b'\x00')
+  let buf_ptr = @ffi.bytes2ptr(buffer)
   let ret = fd_prestat_dir_name_ffi(self._, buf_ptr, size.reinterpret_as_int())
   let ret = Errno::from_value(ret).unwrap()
   @ffi.free(buf_ptr)
@@ -528,10 +524,10 @@ fn fd_readdir_ffi(
 pub fn fd_readdir(
   self : Fd,
   cookie~ : DirCookie = DirCookie(0),
-  buffer~ : FixedArray[Byte] = FixedArray::make(4096, 0)
+  buffer~ : Bytes = Bytes::make(4096, 0)
 ) -> (Array[(String, DirEnt)], Bool)!Errno {
   let buf_len = buffer.length()
-  let buf_ptr = @ffi.byte_array2ptr(buffer)
+  let buf_ptr = @ffi.bytes2ptr(buffer)
   let buf_used_ptr = @ffi.malloc(4)
   let ret = fd_readdir_ffi(self._, buf_ptr, buf_len, cookie._, buf_used_ptr)
   let ret = Errno::from_value(ret).unwrap()
@@ -558,10 +554,11 @@ pub fn fd_readdir(
       // truncated
       break (entries, true)
     }
-    let string = FixedArray::make(namlen, b'\x00')
-    buffer.blit_to(string, len=namlen, src_offset=i + 24)
     entries.push(
-      (string |> decode_utf8, DirEnt::{ d_next, d_ino, d_namlen, d_type }),
+      (
+        buffer[i + 24:i + 24 + namlen] |> decode_utf8,
+        DirEnt::{ d_next, d_ino, d_namlen, d_type },
+      ),
     )
     continue i + 24 + namlen
   } else {
