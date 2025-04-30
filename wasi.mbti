@@ -1,11 +1,19 @@
-package peter-jerry-ye/wasi
+package "peter-jerry-ye/wasi"
+
+import(
+  "moonbitlang/core/bytes"
+)
 
 // Values
 fn args_get() -> Array[String]!Errno
 
 fn args_sizes_get() -> (Int, Int)!Errno
 
-fn decode_utf8(FixedArray[Byte]) -> String
+fn clock_res_get(ClockId) -> TimeStamp!Errno
+
+fn clock_time_get(ClockId, TimeStamp) -> TimeStamp!Errno
+
+fn decode_utf8(@bytes.View) -> String
 
 fn encode_utf8(String) -> FixedArray[Byte]
 
@@ -13,7 +21,67 @@ fn environ_get() -> Array[(String, String)]!Errno
 
 fn environ_sizes_get() -> (Int, Int)!Errno
 
+fn fd_advise(Fd, FileSize, FileSize, Advice) -> Unit!Errno
+
+fn fd_allocate(Fd, FileSize, FileSize) -> Unit!Errno
+
+fn fd_close(Fd) -> Unit!Errno
+
+fn fd_datasync(Fd) -> Unit!Errno
+
+fn fd_fdstat_get(Fd) -> FdStat!Errno
+
+fn fd_fdstat_set_flags(Fd, FdFlags) -> Unit!Errno
+
+fn fd_fdstat_set_rights(Fd, Rights, Rights) -> Unit!Errno
+
+fn fd_filestat_get(Fd) -> FileStat!Errno
+
+fn fd_filestat_set_size(Fd, FileSize) -> Unit!Errno
+
+fn fd_filestat_set_times(Fd, TimeStamp, TimeStamp, FstFlags) -> Unit!Errno
+
+fn fd_pread(Fd, Array[FixedArray[Byte]], FileSize) -> Size!Errno
+
+fn fd_prestat_dir_name(Fd) -> String!Errno
+
+fn fd_prestat_get(Fd) -> PreStat!Errno
+
+fn fd_read(Fd, Array[FixedArray[Byte]]) -> Size!Errno
+
+fn fd_readdir(Fd, cookie~ : DirCookie = .., buffer~ : Bytes = ..) -> (Array[(String, DirEnt)], Bool)!Errno
+
+fn fd_renumber(Fd, Fd) -> Unit!Errno
+
+fn fd_seek(Fd, FileDelta, Whence) -> FileSize!Errno
+
+fn fd_sync(Fd) -> Unit!Errno
+
+fn fd_tell(Fd) -> FileSize!Errno
+
+fn fd_write(Fd, Array[FixedArray[Byte]]) -> Size!Errno
+
+fn is_set(Rights, Right) -> Bool
+
+fn path_create_directory(Fd, String) -> Unit!Errno
+
+fn path_filestat_get(Fd, LookupFlags, String) -> FileStat!Errno
+
+fn path_filestat_set_times(Fd, LookupFlags, String, TimeStamp, TimeStamp, FstFlags) -> Unit!Errno
+
+fn path_link(Fd, LookupFlags, String, Fd, String) -> Unit!Errno
+
+fn path_open(Fd, LookupFlags, String, OpenFlags, Rights, Rights, FdFlags) -> Fd!Errno
+
+fn path_readlink(Fd, String, buffer~ : FixedArray[Byte] = ..) -> Size!Errno
+
+fn path_remove_directory(Fd, String) -> Unit!Errno
+
+fn path_rename(Fd, String, Fd, String) -> Unit!Errno
+
 fn path_symlink(String, Fd, String) -> Unit!Errno
+
+fn path_unlink_file(Fd, String) -> Unit!Errno
 
 fn poll_oneoff(Array[Subscription]) -> Array[Event]!Errno
 
@@ -25,11 +93,25 @@ fn random_get(FixedArray[Byte]) -> Unit!Errno
 
 fn sched_yield() -> Unit!Errno
 
+fn set(Rights, Right) -> Rights
+
+fn sock_accept(Fd, FdFlags) -> Fd!Errno
+
+fn sock_recv(Fd, Array[FixedArray[Byte]], RiFlags) -> (Size, RoFlags)!Errno
+
+fn sock_send(Fd, Array[FixedArray[Byte]], SiFlags) -> Size!Errno
+
+fn sock_shutdown(Fd, SdFlags) -> Unit!Errno
+
 let stderr : Fd
 
 let stdin : Fd
 
 let stdout : Fd
+
+fn unset(Rights, Right) -> Rights
+
+fn value(Errno) -> UInt
 
 // Types and methods
 pub(all) enum Advice {
@@ -243,7 +325,7 @@ impl Fd {
   fd_prestat_dir_name(Self) -> String!Errno
   fd_prestat_get(Self) -> PreStat!Errno
   fd_read(Self, Array[FixedArray[Byte]]) -> Size!Errno
-  fd_readdir(Self, cookie~ : DirCookie = .., buffer~ : FixedArray[Byte] = ..) -> (Array[(String, DirEnt)], Bool)!Errno
+  fd_readdir(Self, cookie~ : DirCookie = .., buffer~ : Bytes = ..) -> (Array[(String, DirEnt)], Bool)!Errno
   fd_renumber(Self, Self) -> Unit!Errno
   fd_seek(Self, FileDelta, Whence) -> FileSize!Errno
   fd_sync(Self) -> Unit!Errno
