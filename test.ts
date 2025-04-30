@@ -1,5 +1,6 @@
 import { assertEquals } from '@std/assert';
 import { assertSnapshot } from '@std/testing/snapshot';
+import { assert } from "@std/assert/assert";
 
 const textDecoder = new TextDecoder('utf-8');
 const textEncoder = new TextEncoder();
@@ -100,6 +101,15 @@ Deno.test("fd_write", async (t) => {
     assertEquals(output.code, 0);
     const stdout = textDecoder.decode(output.stdout)
     await assertSnapshot(t, stdout);
+})
+
+Deno.test("poll_oneoff", async () => {
+    const start = performance.now()
+    await new Deno.Command("wasmtime", {
+        args: ['test/target/wasm/debug/build/poll_oneoff/poll_oneoff.wasm'],
+    }).output()
+    const end = performance.now()
+    assert(end - start > 1, `only toke ${end - start}ms, expected more than 1ms`)
 })
 
 Deno.test("proc_exit", async () => {

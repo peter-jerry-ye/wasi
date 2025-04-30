@@ -1113,10 +1113,10 @@ pub fn poll_oneoff(in_ : Array[Subscription]) -> Array[Event]!Errno {
     match sub.u {
       Clock({ id, timeout, precision, flags }) => {
         @ffi.store32(in_ptr + i * 48 + 8, 0)
-        @ffi.store32_u(in_ptr + i * 48 + 8 + 4 + 0, id.value())
-        @ffi.store64_u(in_ptr + i * 48 + 8 + 4 + 8, timeout._)
-        @ffi.store64_u(in_ptr + i * 48 + 8 + 4 + 16, precision._)
-        @ffi.store32_u(in_ptr + i * 48 + 8 + 4 + 24, flags._)
+        @ffi.store32_u(in_ptr + i * 48 + 8 + 8 + 0, id.value())
+        @ffi.store64_u(in_ptr + i * 48 + 8 + 8 + 8, timeout._)
+        @ffi.store64_u(in_ptr + i * 48 + 8 + 8 + 16, precision._)
+        @ffi.store32_u(in_ptr + i * 48 + 8 + 8 + 24, flags._)
       }
       Fd_read({ file_descriptor }) => {
         @ffi.store32(in_ptr + i * 48 + 8, 1)
@@ -1141,14 +1141,14 @@ pub fn poll_oneoff(in_ : Array[Subscription]) -> Array[Event]!Errno {
   let events = []
   for i in 0..<nevents {
     let userdata : Userdata = @ffi.load64_u(out_ptr + i * 32)
-    let errno : Errno = @ffi.load32_u(out_ptr + i * 32 + 8)
+    let errno : Errno = @ffi.load16_u(out_ptr + i * 32 + 8)
       |> Errno::from_value
       |> Option::unwrap
-    let type_ : EventType = @ffi.load16_u(out_ptr + i * 32 + 12)
+    let type_ : EventType = @ffi.load16_u(out_ptr + i * 32 + 10)
       |> EventType::from_value
       |> Option::unwrap
     let nbytes : FileSize = @ffi.load64_u(out_ptr + i * 32 + 16)
-    let flags : EventRWFlags = @ffi.load32_u(out_ptr + i * 32 + 24)
+    let flags : EventRWFlags = @ffi.load32_u(out_ptr + i * 32 + 16 + 8)
     let fd_readwrite : Event_fd_readwrite = { nbytes, flags }
     events.push(Event::{ userdata, error: errno, type_, fd_readwrite })
   }
