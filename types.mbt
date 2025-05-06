@@ -383,17 +383,17 @@ pub fn Right::value(self : Right) -> UInt64 {
 }
 
 ///|
-pub fn set(self : Rights, right : Right) -> Rights {
+pub fn Rights::set(self : Rights, right : Right) -> Rights {
   self._ | right.value()
 }
 
 ///|
-pub fn unset(self : Rights, right : Right) -> Rights {
+pub fn Rights::unset(self : Rights, right : Right) -> Rights {
   self._ & (right.value() ^ 0)
 }
 
 ///|
-pub fn is_set(self : Rights, right : Right) -> Bool {
+pub fn Rights::is_set(self : Rights, right : Right) -> Bool {
   (self._ & right.value()) != 0
 }
 

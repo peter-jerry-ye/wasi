@@ -61,8 +61,6 @@ fn fd_tell(Fd) -> FileSize!Errno
 
 fn fd_write(Fd, Array[FixedArray[Byte]]) -> Size!Errno
 
-fn is_set(Rights, Right) -> Bool
-
 fn path_create_directory(Fd, String) -> Unit!Errno
 
 fn path_filestat_get(Fd, LookupFlags, String) -> FileStat!Errno
@@ -93,8 +91,6 @@ fn random_get(FixedArray[Byte]) -> Unit!Errno
 
 fn sched_yield() -> Unit!Errno
 
-fn set(Rights, Right) -> Rights
-
 fn sock_accept(Fd, FdFlags) -> Fd!Errno
 
 fn sock_recv(Fd, Array[FixedArray[Byte]], RiFlags) -> (Size, RoFlags)!Errno
@@ -108,8 +104,6 @@ let stderr : Fd
 let stdin : Fd
 
 let stdout : Fd
-
-fn unset(Rights, Right) -> Rights
 
 fn value(Errno) -> UInt
 
