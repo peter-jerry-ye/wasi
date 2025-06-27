@@ -20,7 +20,7 @@ pub fn start() -> Unit {
       userdata: 1,
     },
   ]
-  let result = @wasi.poll_oneoff?(subscriptions)
+  let result = try? @wasi.poll_oneoff(subscriptions)
   guard result is Ok([event])
   guard event.type_ is Clock && event.userdata == 0
 

@@ -3,6 +3,7 @@
     "deps": {
         "peter-jerry-ye/wasi": {
             "path": ".."
-        }
+        },
+        "tonyfettes/encoding": "0.3.3"
     }
 }

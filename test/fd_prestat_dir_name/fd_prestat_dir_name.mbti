@@ -1,0 +1,11 @@
+package "peter-jerry-ye/wasi-test/fd_prestat_dir_name"
+
+// Values
+fn start() -> Unit
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

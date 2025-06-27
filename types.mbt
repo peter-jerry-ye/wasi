@@ -50,7 +50,7 @@ pub fn ClockId::from_value(value : UInt) -> ClockId? {
 /// merely for alignment with POSIX.
 /// 
 /// See : https://github.com/WebAssembly/WASI/blob/main/legacy/preview1/docs.md#-errno-variant
-pub(all) type! Errno {
+pub(all) suberror Errno {
   Success
   TooBig
   Acces
@@ -297,10 +297,11 @@ pub fn Errno::from_value(value : UInt) -> Errno? {
   }
 }
 
+///|
 test "errno" {
   for i in 0U..<76 {
     let errno = Errno::from_value(i)
-    assert_eq!(errno.unwrap().value(), i)
+    assert_eq(errno.unwrap().value(), i)
   }
 }
 
@@ -384,17 +385,17 @@ pub fn Right::value(self : Right) -> UInt64 {
 
 ///|
 pub fn Rights::set(self : Rights, right : Right) -> Rights {
-  self._ | right.value()
+  self.inner() | right.value()
 }
 
 ///|
 pub fn Rights::unset(self : Rights, right : Right) -> Rights {
-  self._ & (right.value() ^ 0)
+  self.inner() & (right.value() ^ 0)
 }
 
 ///|
 pub fn Rights::is_set(self : Rights, right : Right) -> Bool {
-  (self._ & right.value()) != 0
+  (self.inner() & right.value()) != 0
 }
 
 ///| A file descriptor handle
@@ -599,17 +600,17 @@ pub fn FdFlag::value(self : FdFlag) -> UInt {
 
 ///|
 pub fn FdFlags::set(self : FdFlags, flag : FdFlag) -> FdFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn FdFlags::unset(self : FdFlags, flag : FdFlag) -> FdFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn FdFlags::is_set(self : FdFlags, flag : FdFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| File descriptor attributes.
@@ -662,17 +663,17 @@ pub fn FstFlag::value(self : FstFlag) -> UInt {
 
 ///|
 pub fn FstFlags::set(self : FstFlags, flag : FstFlag) -> FstFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn FstFlags::unset(self : FstFlags, flag : FstFlag) -> FstFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn FstFlags::is_set(self : FstFlags, flag : FstFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Flags dermining the method of how paths are resolved.
@@ -697,17 +698,17 @@ pub fn LookupFlag::value(self : LookupFlag) -> UInt {
 
 ///|
 pub fn LookupFlags::set(self : LookupFlags, flag : LookupFlag) -> LookupFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn LookupFlags::unset(self : LookupFlags, flag : LookupFlag) -> LookupFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn LookupFlags::is_set(self : LookupFlags, flag : LookupFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Open flags used by `path_open`.
@@ -743,17 +744,17 @@ pub fn OpenFlag::value(self : OpenFlag) -> UInt {
 
 ///|
 pub fn OpenFlags::set(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn OpenFlags::unset(self : OpenFlags, flag : OpenFlag) -> OpenFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn OpenFlags::is_set(self : OpenFlags, flag : OpenFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Number of hard links to an inode.
@@ -841,7 +842,7 @@ pub fn EventRWFlags::set(
   self : EventRWFlags,
   flag : EventRWFlag
 ) -> EventRWFlags {
-  EventRWFlags(self._ | flag.value())
+  EventRWFlags(self.inner() | flag.value())
 }
 
 ///|
@@ -849,12 +850,12 @@ pub fn EventRWFlags::unset(
   self : EventRWFlags,
   flag : EventRWFlag
 ) -> EventRWFlags {
-  EventRWFlags(self._ & (flag.value() ^ 0))
+  EventRWFlags(self.inner() & (flag.value() ^ 0))
 }
 
 ///|
 pub fn EventRWFlags::is_set(self : EventRWFlags, flag : EventRWFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| The contents of an `event` when type is `eventtype::fd_read` or
@@ -912,7 +913,7 @@ pub fn SubclockFlags::set(
   self : SubclockFlags,
   flag : SubclockFlag
 ) -> SubclockFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
@@ -920,12 +921,12 @@ pub fn SubclockFlags::unset(
   self : SubclockFlags,
   flag : SubclockFlag
 ) -> SubclockFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn SubclockFlags::is_set(self : SubclockFlags, flag : SubclockFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| The contents of a `subscription` when type is `eventtype::clock`.
@@ -1135,17 +1136,17 @@ pub fn RiFlag::value(self : RiFlag) -> UInt {
 
 ///|
 pub fn RiFlags::set(self : RiFlags, flag : RiFlag) -> RiFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn RiFlags::unset(self : RiFlags, flag : RiFlag) -> RiFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn RiFlags::is_set(self : RiFlags, flag : RiFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Flags returned by `sock_recv`.
@@ -1172,17 +1173,17 @@ pub fn RoFlag::value(self : RoFlag) -> UInt {
 
 ///|
 pub fn RoFlags::set(self : RoFlags, flag : RoFlag) -> RoFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn RoFlags::unset(self : RoFlags, flag : RoFlag) -> RoFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn RoFlags::is_set(self : RoFlags, flag : RoFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Flags provided to `sock_send`. As there are currently no flags defined, it must be set to zero.
@@ -1205,17 +1206,17 @@ pub fn SiFlag::value(self : SiFlag) -> UInt {
 
 ///|
 pub fn SiFlags::set(self : SiFlags, flag : SiFlag) -> SiFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn SiFlags::unset(self : SiFlags, flag : SiFlag) -> SiFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn SiFlags::is_set(self : SiFlags, flag : SiFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Which channels on a socket to shut down.
@@ -1245,17 +1246,17 @@ pub fn SdFlag::value(self : SdFlag) -> UInt {
 
 ///|
 pub fn SdFlags::set(self : SdFlags, flag : SdFlag) -> SdFlags {
-  self._ | flag.value()
+  self.inner() | flag.value()
 }
 
 ///|
 pub fn SdFlags::unset(self : SdFlags, flag : SdFlag) -> SdFlags {
-  self._ & (flag.value() ^ 0)
+  self.inner() & (flag.value() ^ 0)
 }
 
 ///|
 pub fn SdFlags::is_set(self : SdFlags, flag : SdFlag) -> Bool {
-  (self._ & flag.value()) != 0
+  (self.inner() & flag.value()) != 0
 }
 
 ///| Identifiers for preopened capabilites.

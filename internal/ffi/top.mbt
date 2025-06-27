@@ -81,6 +81,7 @@ pub extern "wasm" fn loadf64(offset : Int) -> Double =
   #|(func (param i32) (result f64) local.get 0 f64.load)
 
 // set pseudo header; allocate extra bytes for string
+
 ///|
 pub extern "wasm" fn malloc(size : Int) -> Int =
   #|(func (param i32) (result i32) (local i32)
@@ -124,5 +125,6 @@ pub extern "wasm" fn float_array2ptr(array : FixedArray[Float]) -> Int =
 pub extern "wasm" fn double_array2ptr(array : FixedArray[Double]) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)
 
+///|
 pub extern "wasm" fn bytes2ptr(bytes : Bytes) -> Int =
   #|(func (param i32) (result i32) local.get 0 i32.const 8 i32.add)
